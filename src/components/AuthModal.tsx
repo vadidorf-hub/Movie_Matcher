@@ -28,7 +28,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
+ 
     try {
       if (activeTab === 'login') {
         const { error: loginError } = await logIn(email, password);
@@ -68,7 +68,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/70 backdrop-blur-md"
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         />
 
         {/* Modal Content */}
@@ -77,7 +77,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', duration: 0.5 }}
-          className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/85 p-8 shadow-2xl backdrop-blur-xl"
+          className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#110e1a] p-8 shadow-2xl z-50"
         >
           {/* Close Button */}
           <button
@@ -89,23 +89,23 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {/* Brand/Header */}
           <div className="mb-6 text-center">
-            <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-violet-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+            <h2 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
               MOVIE MATCHMAKER
             </h2>
             <p className="text-xs text-zinc-400 mt-1">
-              {activeTab === 'login' ? 'Welcome back! Log in to access your watchlist.' : 'Create an account to sync your swipes to the cloud.'}
+              {activeTab === 'login' ? 'Sign in to sync your swiped watchlist to the cloud.' : 'Create an account to save your swipes.'}
             </p>
           </div>
 
           {/* Tabs */}
-          <div className="relative mb-6 flex rounded-lg bg-zinc-900 p-1">
+          <div className="relative mb-6 flex rounded-lg bg-black p-1 border border-white/5">
             <button
               onClick={() => switchTab('login')}
               className={`relative z-10 w-1/2 py-2 text-center text-sm font-semibold transition-colors cursor-pointer ${
                 activeTab === 'login' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Log In
+              Sign In
             </button>
             <button
               onClick={() => switchTab('signup')}
@@ -132,18 +132,18 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               animate={{ opacity: 1, y: 0 }}
               className="text-center py-6"
             >
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/20 text-violet-400">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/10 text-purple-400">
                 <Mail className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Check your inbox!</h3>
-              <p className="text-sm text-zinc-400 mb-6">
-                We&apos;ve sent a verification link to <span className="font-semibold text-zinc-200">{email}</span>. Click the link to complete registration and sync your movies.
+              <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
+                We&apos;ve sent a verification link to <span className="font-semibold text-zinc-200">{email}</span>. Click the link to complete registration.
               </p>
               <button
                 onClick={() => switchTab('login')}
-                className="w-full py-3 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white font-bold rounded-xl shadow-lg transition-colors cursor-pointer"
+                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg transition-colors cursor-pointer"
               >
-                Go to Log In
+                Go to Sign In
               </button>
             </motion.div>
           ) : (
@@ -174,7 +174,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="you@example.com"
-                    className="w-full rounded-xl border border-white/5 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-500 outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                    className="w-full rounded-xl border border-white/5 bg-black py-3 pl-10 pr-4 text-sm text-white placeholder-zinc-500 outline-none focus:border-purple-500/50 transition-all"
                   />
                 </div>
               </div>
@@ -193,7 +193,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-white/5 bg-zinc-900 py-3 pl-10 pr-12 text-sm text-white placeholder-zinc-500 outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+                    className="w-full rounded-xl border border-white/5 bg-black py-3 pl-10 pr-12 text-sm text-white placeholder-zinc-500 outline-none focus:border-purple-500/50 transition-all"
                   />
                   <button
                     type="button"
@@ -209,7 +209,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full mt-2 py-3 bg-purple-650 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border border-purple-500/20 bg-purple-600"
               >
                 {loading ? (
                   <>
@@ -217,7 +217,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     <span>Processing...</span>
                   </>
                 ) : (
-                  <span>{activeTab === 'login' ? 'Log In' : 'Sign Up'}</span>
+                  <span>{activeTab === 'login' ? 'Sign In' : 'Sign Up'}</span>
                 )}
               </button>
             </form>

@@ -130,7 +130,7 @@ export default function SwipeDeck({
             disabled={!canUndo}
             className={`flex items-center justify-center rounded-full p-3.5 border transition-all duration-200 active:scale-90 shadow-md ${
               canUndo
-                ? 'bg-zinc-900 hover:bg-zinc-800 text-amber-500 border-amber-500/20 hover:border-amber-500/40 hover:shadow-amber-500/5 cursor-pointer'
+                ? 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-amber-500 hover:border-amber-500/40 hover:shadow-amber-500/5 cursor-pointer hover:scale-105'
                 : 'bg-zinc-900/40 text-zinc-600 border-white/5 cursor-not-allowed'
             }`}
             title="Rewind Last Swipe (R)"
@@ -141,7 +141,7 @@ export default function SwipeDeck({
           {/* Nope / Dislike */}
           <button
             onClick={() => handleButtonSwipe('left')}
-            className="flex items-center justify-center rounded-full bg-zinc-900 hover:bg-zinc-800 border border-rose-500/20 hover:border-rose-500/40 text-rose-500 hover:shadow-rose-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
+            className="flex items-center justify-center rounded-full bg-zinc-900 border border-white/10 hover:border-fuchsia-500 hover:text-fuchsia-500 text-zinc-400 hover:shadow-fuchsia-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
             title="Dismiss Movie (ArrowLeft)"
           >
             <X className="h-7 w-7" />
@@ -150,19 +150,19 @@ export default function SwipeDeck({
           {/* Super Like */}
           <button
             onClick={() => handleButtonSwipe('up')}
-            className="flex items-center justify-center rounded-full bg-zinc-900 hover:bg-zinc-800 border border-sky-500/20 hover:border-sky-500/40 text-sky-400 hover:shadow-sky-500/5 hover:scale-105 active:scale-90 p-3.5 shadow-md cursor-pointer transition-all duration-200"
+            className="flex items-center justify-center rounded-full bg-zinc-900 border border-white/10 hover:border-sky-400 hover:text-sky-400 text-zinc-400 hover:shadow-sky-500/5 hover:scale-105 active:scale-90 p-3.5 shadow-md cursor-pointer transition-all duration-200"
             title="Super Like (ArrowUp)"
           >
-            <Star className="h-5 w-5 fill-sky-400" />
+            <Star className="h-5 w-5 fill-transparent hover:fill-sky-400" />
           </button>
 
           {/* Like */}
           <button
             onClick={() => handleButtonSwipe('right')}
-            className="flex items-center justify-center rounded-full bg-zinc-900 hover:bg-zinc-800 border border-emerald-500/20 hover:border-emerald-500/40 text-emerald-500 hover:shadow-emerald-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
+            className="flex items-center justify-center rounded-full bg-zinc-900 border border-white/10 hover:border-emerald-500 hover:text-emerald-500 text-zinc-400 hover:shadow-emerald-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
             title="Save to Watchlist (ArrowRight)"
           >
-            <Heart className="h-7 w-7 fill-emerald-500" />
+            <Heart className="h-7 w-7 fill-transparent hover:fill-emerald-500" />
           </button>
         </div>
       )}

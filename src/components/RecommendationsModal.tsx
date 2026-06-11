@@ -27,8 +27,8 @@ export default function RecommendationsModal({
   // Trigger confetti when modal is opened with recommendations
   useEffect(() => {
     if (isOpen && recommendations.length > 0) {
-      // Fire confetti
-      const duration = 3 * 1000;
+      // Fire confetti in Amethyst branding colors!
+      const duration = 2.5 * 1000;
       const end = Date.now() + duration;
 
       const frame = () => {
@@ -37,14 +37,14 @@ export default function RecommendationsModal({
           angle: 60,
           spread: 55,
           origin: { x: 0 },
-          colors: ['#8b5cf6', '#ec4899', '#3b82f6'],
+          colors: ['#9d4edd', '#ff007f', '#00f0ff'],
         });
         confetti({
           particleCount: 3,
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: ['#8b5cf6', '#ec4899', '#3b82f6'],
+          colors: ['#9d4edd', '#ff007f', '#00f0ff'],
         });
 
         if (Date.now() < end) {
@@ -66,20 +66,20 @@ export default function RecommendationsModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
           transition={{ type: 'spring', duration: 0.5 }}
-          className="relative w-full max-w-6xl rounded-3xl border border-white/10 bg-zinc-950/90 p-6 md:p-8 shadow-2xl shadow-violet-500/10 flex flex-col gap-6 max-h-[95vh] overflow-y-auto"
+          className="relative w-full max-w-6xl rounded-3xl border border-white/10 bg-[#110e1a] p-6 md:p-8 shadow-2xl shadow-purple-500/10 flex flex-col gap-6 max-h-[95vh] overflow-y-auto amethyst-scrollbar"
         >
           {/* Header */}
           <div className="flex items-start justify-between border-b border-white/5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-violet-600/10 border border-violet-500/25 text-violet-400">
+              <div className="p-2.5 rounded-xl bg-purple-600/10 border border-purple-500/25 text-purple-400">
                 <Sparkles className="h-6 w-6 animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl md:text-2xl font-black bg-gradient-to-r from-violet-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+                <h2 className="text-xl md:text-2xl font-black text-purple-400 tracking-tight uppercase">
                   YOUR MATCHES ARE READY!
                 </h2>
-                <p className="text-xs md:text-sm text-zinc-400 font-medium">
-                  We found these 5 films curated specially for you based on your 10 picks.
+                <p className="text-xs md:text-sm text-zinc-400 font-semibold">
+                  We found these 5 films curated specially for you based on your swiping profile.
                 </p>
               </div>
             </div>
@@ -94,7 +94,7 @@ export default function RecommendationsModal({
           {/* Recommendations Grid */}
           {recommendations.length === 0 ? (
             <div className="flex flex-col items-center justify-center text-center py-12 text-zinc-500">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent mb-3" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-550 border-t-transparent mb-3" />
               <p className="text-sm font-semibold tracking-wider text-zinc-400 animate-pulse">
                 Analyzing choices and compiling recommendations...
               </p>
@@ -103,13 +103,14 @@ export default function RecommendationsModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
               {recommendations.slice(0, 5).map((movie, idx) => {
                 const isSaved = watchlist.some((m) => m.id === movie.id);
+                const matchPercentage = Math.round(75 + (movie.rating / 10) * 23);
                 return (
                   <motion.div
                     key={movie.id}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="group flex flex-col rounded-2xl border border-white/5 bg-zinc-900/30 overflow-hidden hover:border-violet-500/20 hover:bg-zinc-900/70 hover:shadow-xl hover:shadow-violet-500/5 transition-all duration-300"
+                    className="group flex flex-col rounded-2xl border border-white/5 bg-zinc-900/30 overflow-hidden hover:border-purple-500/25 hover:bg-zinc-900/70 hover:shadow-xl hover:shadow-purple-500/5 transition-all duration-300"
                   >
                     {/* Poster Wrapper */}
                     <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-800">
@@ -130,7 +131,7 @@ export default function RecommendationsModal({
                       {movie.trailerUrl && (
                         <button
                           onClick={() => setActiveTrailer(movie.trailerUrl || null)}
-                          className="absolute inset-0 m-auto flex h-12 w-12 items-center justify-center rounded-full bg-violet-600/90 hover:bg-violet-500 text-white border border-white/20 shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
+                          className="absolute inset-0 m-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-600/90 hover:bg-purple-505 text-white border border-white/20 shadow-lg opacity-0 group-hover:opacity-100 focus:opacity-100 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
                           title="Watch Trailer"
                         >
                           <Play className="h-5 w-5 fill-white ml-0.5" />
@@ -139,14 +140,14 @@ export default function RecommendationsModal({
                     </div>
 
                     {/* Metadata & Description */}
-                    <div className="p-4 flex-grow flex flex-col justify-between gap-3">
+                    <div className="p-4 flex-grow flex flex-col justify-between gap-3 bg-zinc-900/20">
                       <div className="space-y-1">
-                        <h4 className="font-bold text-sm text-zinc-100 leading-snug group-hover:text-violet-300 transition-colors line-clamp-1">
+                        <h4 className="font-bold text-sm text-zinc-100 leading-snug group-hover:text-purple-400 transition-colors line-clamp-1 uppercase">
                           {movie.title}
                         </h4>
-                        <div className="text-3xs text-zinc-400 font-medium flex items-center gap-1.5">
+                        <div className="text-3xs text-zinc-400 font-semibold flex items-center gap-1.5">
+                          <span className="text-emerald-400">{matchPercentage}% Match</span>
                           <span>{movie.releaseYear}</span>
-                          <span>•</span>
                           <span>{movie.runtime}m</span>
                         </div>
                         <p className="text-3xs text-zinc-500 line-clamp-2 leading-relaxed mt-1">
@@ -161,7 +162,7 @@ export default function RecommendationsModal({
                         className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-2xs font-bold transition-all duration-200 cursor-pointer ${
                           isSaved
                             ? 'bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 cursor-default'
-                            : 'bg-zinc-800 hover:bg-violet-600 border border-white/5 hover:border-violet-500 text-zinc-300 hover:text-white active:scale-97'
+                            : 'bg-zinc-800 hover:bg-purple-650 border border-white/5 hover:border-purple-500 text-zinc-300 hover:text-white active:scale-97'
                         }`}
                       >
                         {isSaved ? (
@@ -208,7 +209,7 @@ export default function RecommendationsModal({
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
                 exit={{ scale: 0.95 }}
-                className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-zinc-950 shadow-2xl"
+                className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button

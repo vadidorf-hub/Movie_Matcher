@@ -32,15 +32,15 @@ export default function Watchlist({
   );
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950 border border-white/5 lg:border-none rounded-2xl lg:rounded-none overflow-hidden">
+    <div className="h-full flex flex-col bg-black border border-white/5 lg:border-none rounded-2xl lg:rounded-none overflow-hidden">
       {/* Drawer header on mobile */}
       <div className="flex items-center justify-between border-b border-white/5 p-4 lg:py-5 lg:px-6">
         <div>
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Film className="h-4.5 w-4.5 text-violet-400" />
+            <Film className="h-4.5 w-4.5 text-purple-400" />
             My Watchlist
           </h2>
-          <p className="text-xs text-zinc-400">
+          <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">
             {watchlist.length} {watchlist.length === 1 ? 'movie' : 'movies'} saved
           </p>
         </div>
@@ -48,7 +48,7 @@ export default function Watchlist({
           {(watchlist.length > 0 || recommendations.length > 0) && (
             <button
               onClick={onStartOver}
-              className="text-2xs bg-zinc-900 border border-white/10 hover:border-rose-500/20 text-zinc-400 hover:text-rose-400 px-2.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer"
+              className="text-2xs bg-zinc-900 border border-white/10 hover:border-purple-500/20 text-zinc-400 hover:text-purple-400 px-2.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer font-bold"
             >
               Start Over
             </button>
@@ -74,14 +74,14 @@ export default function Watchlist({
               placeholder="Search title or genre..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-900 border border-white/5 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-violet-500/50 transition-colors"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-900 border border-white/5 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 transition-colors"
             />
           </div>
         </div>
       )}
 
       {/* Watchlist & Recommendations Scroll Panel */}
-      <div className="flex-grow overflow-y-auto p-4 lg:p-6 space-y-3">
+      <div className="flex-grow overflow-y-auto p-4 lg:p-6 space-y-3 amethyst-scrollbar">
         {watchlist.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 select-none">
             <div className="p-4 rounded-full bg-zinc-900/60 border border-white/5 text-zinc-600 mb-3">
@@ -116,10 +116,10 @@ export default function Watchlist({
 
               {/* Title & Metadata */}
               <div className="flex-grow min-w-0 pr-8">
-                <h4 className="text-sm font-bold text-zinc-100 group-hover:text-violet-300 transition-colors truncate">
+                <h4 className="text-sm font-bold text-zinc-100 group-hover:text-purple-400 transition-colors truncate uppercase">
                   {movie.title}
                 </h4>
-                <div className="flex items-center gap-2 mt-1 text-2xs font-medium text-zinc-400">
+                <div className="flex items-center gap-2 mt-1 text-2xs font-semibold text-zinc-400">
                   <span className="flex items-center gap-0.5 text-amber-500">
                     <Star className="h-3 w-3 fill-amber-500" />
                     {movie.rating.toFixed(1)}
@@ -132,7 +132,7 @@ export default function Watchlist({
                   {movie.genres.slice(0, 2).map((g) => (
                     <span
                       key={g}
-                      className="bg-white/5 text-zinc-400 text-4xs px-1.5 py-0.5 rounded border border-white/5"
+                      className="bg-white/5 text-zinc-400 text-4xs px-1.5 py-0.5 rounded border border-white/5 font-semibold"
                     >
                       {g}
                     </span>
@@ -165,9 +165,9 @@ export default function Watchlist({
           <div className="pt-6 animate-in fade-in duration-300">
             <div className="flex items-center gap-2 mb-4 border-t border-white/5 pt-5 px-1">
               <div className="relative">
-                <Sparkles className="h-4 w-4 text-violet-400 animate-pulse" />
+                <Sparkles className="h-4 w-4 text-purple-400 animate-pulse" />
               </div>
-              <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                 Recommended For You
               </h3>
             </div>
@@ -177,7 +177,7 @@ export default function Watchlist({
                 <div
                   key={`rec-${movie.id}`}
                   onClick={() => onSelectMovie(movie)}
-                  className="group relative flex gap-3 p-2.5 rounded-xl border border-violet-500/10 hover:border-violet-500/25 bg-violet-950/5 hover:bg-violet-950/10 transition-all duration-200 cursor-pointer"
+                  className="group relative flex gap-3 p-2.5 rounded-xl border border-purple-500/10 hover:border-purple-500/25 bg-purple-950/5 hover:bg-purple-950/10 transition-all duration-200 cursor-pointer"
                 >
                   {/* Mini Poster */}
                   <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded-lg border border-white/5 bg-zinc-800">
@@ -192,10 +192,10 @@ export default function Watchlist({
 
                   {/* Title & Metadata */}
                   <div className="flex-grow min-w-0 pr-8">
-                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-violet-300 transition-colors truncate">
+                    <h4 className="text-sm font-bold text-zinc-100 group-hover:text-purple-400 transition-colors truncate uppercase">
                       {movie.title}
                     </h4>
-                    <div className="flex items-center gap-2 mt-1 text-2xs font-medium text-zinc-400">
+                    <div className="flex items-center gap-2 mt-1 text-2xs font-semibold text-zinc-400">
                       <span className="flex items-center gap-0.5 text-amber-500">
                         <Star className="h-3 w-3 fill-amber-500" />
                         {movie.rating.toFixed(1)}
@@ -208,7 +208,7 @@ export default function Watchlist({
                       {movie.genres.slice(0, 2).map((g) => (
                         <span
                           key={g}
-                          className="bg-white/5 text-zinc-400 text-4xs px-1.5 py-0.5 rounded border border-white/5"
+                          className="bg-white/5 text-zinc-400 text-4xs px-1.5 py-0.5 rounded border border-white/5 font-semibold"
                         >
                           {g}
                         </span>
@@ -222,7 +222,7 @@ export default function Watchlist({
                       e.stopPropagation();
                       onSaveRecommendation(movie);
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white shadow-lg cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-purple-600 hover:bg-purple-750 text-white shadow-lg cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center"
                     title="Save to watchlist"
                   >
                     <Plus className="h-4 w-4" />

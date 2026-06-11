@@ -52,12 +52,12 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/5 pb-3">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-violet-400" />
-          <h3 className="font-semibold text-zinc-100 text-sm">Match Filters</h3>
+          <Filter className="h-4 w-4 text-purple-400" />
+          <h3 className="font-bold text-zinc-200 text-sm uppercase tracking-wider">Match Filters</h3>
         </div>
         <button
           onClick={onReset}
-          className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors duration-250 cursor-pointer"
+          className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors duration-250 cursor-pointer font-semibold"
         >
           <RotateCcw className="h-3 w-3" />
           Reset
@@ -66,19 +66,19 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
 
       {/* Genres Grid */}
       <div>
-        <span className="block text-xs font-semibold text-zinc-400 mb-3 uppercase tracking-wider">
+        <span className="block text-xs font-bold text-zinc-400 mb-3 uppercase tracking-wider">
           Genres
         </span>
-        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1 amethyst-scrollbar">
           {allGenres.map((genre) => {
             const isSelected = filters.genres.includes(genre);
             return (
               <button
                 key={genre}
                 onClick={() => toggleGenre(genre)}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-all duration-200 cursor-pointer ${
+                className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 cursor-pointer font-semibold ${
                   isSelected
-                    ? 'bg-violet-600/20 border-violet-500 text-violet-200 shadow-sm shadow-violet-500/10'
+                    ? 'bg-purple-600/25 border-purple-500 text-white shadow-sm shadow-purple-500/10'
                     : 'bg-zinc-900 border-white/5 text-zinc-400 hover:border-white/15 hover:text-zinc-200'
                 }`}
               >
@@ -92,7 +92,7 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
       {/* Rating Range Slider */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
             Min IMDb Rating
           </span>
           <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
@@ -107,9 +107,9 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
           step="0.1"
           value={filters.minRating}
           onChange={handleRatingChange}
-          className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-violet-500 focus:outline-none"
+          className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-purple-600 focus:outline-none"
         />
-        <div className="flex justify-between text-3xs text-zinc-500 mt-1">
+        <div className="flex justify-between text-3xs text-zinc-500 mt-1 font-semibold">
           <span>7.0</span>
           <span>8.0</span>
           <span>9.0</span>
@@ -118,7 +118,7 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
 
       {/* Decades Selector */}
       <div>
-        <span className="block text-xs font-semibold text-zinc-400 mb-3 uppercase tracking-wider">
+        <span className="block text-xs font-bold text-zinc-400 mb-3 uppercase tracking-wider">
           Release Era
         </span>
         <div className="grid grid-cols-3 gap-2">
@@ -128,9 +128,9 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
               <button
                 key={d.value}
                 onClick={() => setDecade(d.value)}
-                className={`text-xs py-2 rounded-lg border text-center transition-all duration-200 cursor-pointer ${
+                className={`text-xs py-2 rounded-lg border text-center transition-all duration-200 cursor-pointer font-semibold ${
                   isSelected
-                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-200 shadow-sm shadow-indigo-500/10'
+                    ? 'bg-purple-600/25 border-purple-500 text-white shadow-sm shadow-purple-500/10'
                     : 'bg-zinc-900 border-white/5 text-zinc-400 hover:border-white/15 hover:text-zinc-200'
                 }`}
               >
