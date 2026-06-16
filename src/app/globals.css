@@ -1,30 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&family=Outfit:wght@300;400;600;800;900&display=swap');
 @import "tailwindcss";
 
+/* Default Theme: Amethyst Dark */
 :root {
-  --background: #07050f; /* Deep Dark Amethyst Black */
-  --foreground: #f5f5f7; /* Soft White */
-  --amethyst: #9d4edd; /* Vibrant Purple Accent */
-  --amethyst-hover: #7b2cbf; /* Rich Deep Violet */
-  --amethyst-glow: rgba(157, 78, 221, 0.3);
-  --neon-magenta: #ff007f; /* Neon Magenta Highlight */
-  --neon-cyan: #00f0ff; /* Electric Cyan */
-  --zinc-900-amethyst: #110e1a; /* Dark Panel Background */
-  --zinc-800-amethyst: #181526; /* Card Background */
+  --bg-color: #07050f;
+  --fg-color: #f5f5f7;
+  --accent-color: #9d4edd;
+  --accent-hover: #7b2cbf;
+  --accent-glow: rgba(157, 78, 221, 0.3);
+  --accent-secondary: #ff007f;
+  --accent-tertiary: #00f0ff;
+  --panel-bg: #110e1a;
+  --card-bg: #181526;
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-color-hover: rgba(157, 78, 221, 0.2);
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-header: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --border-radius: 1rem;
+  --scrollbar-thumb: rgba(157, 78, 221, 0.35);
+  --scrollbar-thumb-hover: rgba(157, 78, 221, 0.7);
+  --btn-text: #ffffff;
+}
+
+/* Cyberpunk Neo-Tokyo Theme */
+.theme-cyberpunk {
+  --bg-color: #000000;
+  --fg-color: #00ff66;
+  --accent-color: #ff0055;
+  --accent-hover: #cc0044;
+  --accent-glow: rgba(255, 0, 85, 0.45);
+  --accent-secondary: #00f0ff;
+  --accent-tertiary: #ffff00;
+  --panel-bg: #090909;
+  --card-bg: #121212;
+  --border-color: rgba(255, 0, 85, 0.35);
+  --border-color-hover: #ff0055;
+  --font-family: 'Share Tech Mono', monospace;
+  --font-header: 'Share Tech Mono', monospace;
+  --border-radius: 0px;
+  --scrollbar-thumb: rgba(0, 255, 102, 0.35);
+  --scrollbar-thumb-hover: rgba(0, 255, 102, 0.7);
+  --btn-text: #000000;
+}
+
+/* Vintage Cinema / Hollywood Gold Theme */
+.theme-hollywood {
+  --bg-color: #120202;
+  --fg-color: #fcf8f2;
+  --accent-color: #d4af37;
+  --accent-hover: #b8972f;
+  --accent-glow: rgba(212, 175, 55, 0.3);
+  --accent-secondary: #e63946;
+  --accent-tertiary: #ffb703;
+  --panel-bg: #1c0606;
+  --card-bg: #280a0a;
+  --border-color: rgba(212, 175, 55, 0.25);
+  --border-color-hover: rgba(212, 175, 55, 0.6);
+  --font-family: Georgia, serif;
+  --font-header: 'Cinzel', Georgia, serif;
+  --border-radius: 0.375rem;
+  --scrollbar-thumb: rgba(212, 175, 55, 0.3);
+  --scrollbar-thumb-hover: rgba(212, 175, 55, 0.6);
+  --btn-text: #120202;
+}
+
+/* Nordic Aurora / Frost Tech Theme */
+.theme-aurora {
+  --bg-color: #080f1a;
+  --fg-color: #eef2f6;
+  --accent-color: #06b6d4;
+  --accent-hover: #0891b2;
+  --accent-glow: rgba(6, 182, 212, 0.3);
+  --accent-secondary: #10b981;
+  --accent-tertiary: #6366f1;
+  --panel-bg: #0f1c2e;
+  --card-bg: #162942;
+  --border-color: rgba(6, 182, 212, 0.15);
+  --border-color-hover: rgba(6, 182, 212, 0.45);
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-header: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --border-radius: 1.75rem;
+  --scrollbar-thumb: rgba(6, 182, 212, 0.3);
+  --scrollbar-thumb-hover: rgba(6, 182, 212, 0.6);
+  --btn-text: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-amethyst: var(--amethyst);
-  --color-amethyst-hover: var(--amethyst-hover);
-  --color-neon-magenta: var(--neon-magenta);
+  --color-theme-bg: var(--bg-color);
+  --color-theme-fg: var(--fg-color);
+  --color-theme-accent: var(--accent-color);
+  --color-theme-accent-hover: var(--accent-hover);
+  --color-theme-accent-glow: var(--accent-glow);
+  --color-theme-secondary: var(--accent-secondary);
+  --color-theme-tertiary: var(--accent-tertiary);
+  --color-theme-panel: var(--panel-bg);
+  --color-theme-card: var(--card-bg);
+  --color-theme-border: var(--border-color);
+  --color-theme-border-hover: var(--border-color-hover);
+  --color-theme-btn-text: var(--btn-text);
+  
+  --font-theme-body: var(--font-family);
+  --font-theme-head: var(--font-header);
+  --radius-theme-radius: var(--border-radius);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-color);
+  color: var(--fg-color);
   overflow-x: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-family);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom scrollbar for horizontal scroll */
@@ -41,14 +126,15 @@ body {
   width: 6px;
 }
 .amethyst-scrollbar::-webkit-scrollbar-track {
-  background: rgba(7, 5, 15, 0.4);
+  background: rgba(0, 0, 0, 0.2);
 }
 .amethyst-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(157, 78, 221, 0.35); /* Muted purple scrollbar */
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
+  transition: background-color 0.3s ease;
 }
 .amethyst-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(157, 78, 221, 0.7);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Custom scrollbar globally */
@@ -57,32 +143,38 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.1);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(157, 78, 221, 0.2);
+  background: var(--scrollbar-thumb);
   border-radius: 9999px;
+  transition: background-color 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(157, 78, 221, 0.45);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Custom utilities */
 .glass-panel {
-  background: rgba(17, 14, 26, 0.75);
+  background: var(--panel-bg);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: background-color 0.3s ease, border-color 0.3s ease, border-radius 0.3s ease;
 }
 
 .glass-card {
-  background: #181526;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: background-color 0.3s ease, border-color 0.3s ease, border-radius 0.3s ease;
 }
 
 .glow-amethyst {
-  box-shadow: 0 0 30px rgba(157, 78, 221, 0.2);
+  box-shadow: 0 0 30px var(--accent-glow);
 }
+
 
 .glow-green {
   box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);

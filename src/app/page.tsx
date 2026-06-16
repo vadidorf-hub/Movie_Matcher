@@ -25,7 +25,8 @@ import {
   Star,
   Play,
   Plus,
-  Check
+  Check,
+  Palette
 } from 'lucide-react';
 import { useAuth } from '../components/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -38,6 +39,13 @@ const initialFilters: FilterState = {
 };
 
 type ActiveTab = 'swipe' | 'browse' | 'watchlist';
+
+const themes = [
+  { id: 'amethyst', name: 'Classic Amethyst', primary: '#9d4edd', secondary: '#ff007f', bg: '#07050f' },
+  { id: 'cyberpunk', name: 'Cyberpunk Tokyo', primary: '#ff0055', secondary: '#00f0ff', bg: '#000000' },
+  { id: 'hollywood', name: 'Hollywood Gold', primary: '#d4af37', secondary: '#e63946', bg: '#120202' },
+  { id: 'aurora', name: 'Nordic Aurora', primary: '#06b6d4', secondary: '#10b981', bg: '#080f1a' },
+];
 
 export default function Home() {
   const {
@@ -82,9 +90,16 @@ export default function Home() {
   const [isRecommendationsModalOpen, setIsRecommendationsModalOpen] = useState(false);
   const [hasShownRecommendationsModal, setHasShownRecommendationsModal] = useState(false);
 
+  const [currentTheme, setCurrentTheme] = useState<string>('amethyst');
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+
   // Set mounted on client
   useEffect(() => {
     setIsMounted(true);
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setCurrentTheme(savedTheme);
+    }
   }, []);
 
   // Fetch recommendations once watchlist length is 10 or more using our API endpoint
@@ -358,10 +373,10 @@ export default function Home() {
 
   if (!isMounted || isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-black text-purple-500">
+      <div className={`theme-${currentTheme} flex h-screen w-screen items-center justify-center bg-theme-bg text-theme-accent font-theme-body`}>
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500 border-t-transparent shadow-lg" />
-          <p className="text-xs font-bold tracking-widest text-zinc-400 animate-pulse uppercase">Syncing Live TMDB API...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-theme-accent border-t-transparent shadow-lg" />
+          <p className="text-xs font-bold tracking-widest text-theme-fg/70 animate-pulse uppercase">Syncing Live TMDB API...</p>
         </div>
       </div>
     );
@@ -375,14 +390,14 @@ export default function Home() {
   const watchlistSet = new Set(watchlist.map(m => m.id));
 
   return (
-    <div className="h-screen bg-black text-zinc-100 flex flex-col font-sans overflow-hidden selection:bg-purple-600/30">
+    <div className={`theme-${currentTheme} h-screen bg-theme-bg text-theme-fg flex flex-col font-theme-body overflow-hidden selection:bg-theme-accent/30`}>
       
       {/* Sleek Navigation Header */}
-      <header className="h-[68px] flex-shrink-0 bg-black/95 border-b border-white/5 py-4 px-4 md:px-10 flex items-center justify-between z-30">
+      <header className="h-[68px] flex-shrink-0 bg-theme-panel/95 border-b border-theme-border py-4 px-4 md:px-10 flex items-center justify-between z-30">
         <div className="flex items-center gap-6 md:gap-10">
-          {/* Logo with Amethyst Gradient */}
+          {/* Logo with Dynamic Theme Gradient */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveTab('swipe'); setSearchQuery(''); }}>
-            <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-purple-500 via-fuchsia-500 to-indigo-500 bg-clip-text text-transparent select-none">
+            <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-theme-accent via-theme-secondary to-theme-tertiary bg-clip-text text-transparent select-none font-theme-head">
               MOVIE MATCHMAKER
             </h1>
           </div>
@@ -393,8 +408,8 @@ export default function Home() {
               onClick={() => { setActiveTab('swipe'); setSearchQuery(''); }}
               className={`text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 activeTab === 'swipe' && !searchQuery
-                  ? 'bg-zinc-800/80 px-3.5 py-1.5 rounded-full text-white shadow-md'
-                  : 'text-zinc-400 hover:text-zinc-200 px-1 py-1'
+                  ? 'bg-theme-card px-3.5 py-1.5 rounded-theme-radius text-theme-fg border border-theme-border shadow-md'
+                  : 'text-theme-fg/60 hover:text-theme-fg px-1 py-1'
               }`}
             >
               Swipe Match
@@ -403,8 +418,8 @@ export default function Home() {
               onClick={() => { setActiveTab('browse'); setSearchQuery(''); }}
               className={`text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 activeTab === 'browse' && !searchQuery
-                  ? 'bg-zinc-800/80 px-3.5 py-1.5 rounded-full text-white shadow-md'
-                  : 'text-zinc-400 hover:text-zinc-200 px-1 py-1'
+                  ? 'bg-theme-card px-3.5 py-1.5 rounded-theme-radius text-theme-fg border border-theme-border shadow-md'
+                  : 'text-theme-fg/60 hover:text-theme-fg px-1 py-1'
               }`}
             >
               Browse Dashboard
@@ -413,13 +428,13 @@ export default function Home() {
               onClick={() => { setActiveTab('watchlist'); setSearchQuery(''); }}
               className={`text-sm font-semibold transition-all duration-200 cursor-pointer ${
                 activeTab === 'watchlist' && !searchQuery
-                  ? 'bg-zinc-800/80 px-3.5 py-1.5 rounded-full text-white shadow-md'
-                  : 'text-zinc-400 hover:text-zinc-200 px-1 py-1'
+                  ? 'bg-theme-card px-3.5 py-1.5 rounded-theme-radius text-theme-fg border border-theme-border shadow-md'
+                  : 'text-theme-fg/60 hover:text-theme-fg px-1 py-1'
               }`}
             >
               My Watchlist
               {watchlist.length > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-purple-600 text-white text-4xs font-black">
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-theme-accent text-theme-btn-text text-4xs font-black">
                   {watchlist.length}
                 </span>
               )}
@@ -428,37 +443,84 @@ export default function Home() {
         </div>
 
         {/* Right Header Panel Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Animated Search Bar */}
           <div className="relative flex items-center">
             <motion.div
-              animate={{ width: isSearchExpanded ? 220 : 0, opacity: isSearchExpanded ? 1 : 0 }}
+              animate={{ width: isSearchExpanded ? (typeof window !== 'undefined' && window.innerWidth < 640 ? 120 : 180) : 0, opacity: isSearchExpanded ? 1 : 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="overflow-hidden bg-zinc-900/90 border border-white/10 rounded-lg pr-8 flex items-center h-8.5"
+              className="overflow-hidden bg-theme-card border border-theme-border rounded-theme-radius pr-8 flex items-center h-8.5"
             >
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Titles, genres, directors..."
-                className="w-full pl-3 bg-transparent text-xs text-white placeholder-zinc-500 border-none outline-none focus:ring-0 focus:outline-none"
+                placeholder="Search..."
+                className="w-full pl-3 bg-transparent text-xs text-theme-fg placeholder-theme-fg/40 border-none outline-none focus:ring-0 focus:outline-none"
               />
             </motion.div>
             <button
               onClick={toggleSearchExpand}
-              className="p-2 text-zinc-400 hover:text-white transition-colors cursor-pointer rounded-full hover:bg-zinc-900/50 absolute right-0"
+              className="p-2 text-theme-fg/60 hover:text-theme-fg transition-colors cursor-pointer rounded-full hover:bg-theme-panel/50 absolute right-0"
               title="Search Movies"
             >
               {isSearchExpanded ? <X className="h-4.5 w-4.5" /> : <Search className="h-4.5 w-4.5" />}
             </button>
           </div>
 
+          {/* Theme Switcher Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+              className="p-2 text-theme-fg/60 hover:text-theme-fg transition-all cursor-pointer rounded-full hover:bg-theme-panel/50 border border-theme-border flex items-center justify-center gap-1.5 shadow-sm"
+              title="Switch UI Theme"
+            >
+              <Palette className="h-4.5 w-4.5 text-theme-accent" />
+              <span className="hidden md:inline text-xs font-semibold">Theme</span>
+            </button>
+
+            {isThemeMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsThemeMenuOpen(false)} />
+                <div className="absolute right-0 mt-2.5 w-56 rounded-theme-radius border border-theme-border bg-theme-panel p-2 shadow-2xl z-50 animate-scale-in">
+                  <div className="px-3 py-2 border-b border-theme-border text-4xs text-theme-fg/50 font-bold uppercase tracking-wider font-theme-head">
+                    Select UI Theme
+                  </div>
+                  <div className="space-y-1 mt-1">
+                    {themes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setCurrentTheme(t.id);
+                          localStorage.setItem('theme', t.id);
+                          setIsThemeMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between rounded-theme-radius px-3 py-2 text-left text-xs transition-colors cursor-pointer ${
+                          currentTheme === t.id
+                            ? 'bg-theme-accent/15 text-theme-accent font-bold'
+                            : 'text-theme-fg/85 hover:bg-white/5'
+                        }`}
+                      >
+                        <span className="font-medium">{t.name}</span>
+                        <div className="flex items-center">
+                          <span className="h-3 w-3 rounded-full border border-white/10" style={{ backgroundColor: t.primary, zIndex: 3 }} />
+                          <span className="h-3 w-3 rounded-full border border-white/10" style={{ backgroundColor: t.secondary, zIndex: 2, marginLeft: '-5px' }} />
+                          <span className="h-3 w-3 rounded-full border border-white/10" style={{ backgroundColor: t.bg, zIndex: 1, marginLeft: '-5px' }} />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Cloud Sync Status Indicator */}
           {user && (
-            <div className="hidden sm:flex items-center gap-1 text-xs text-zinc-500 bg-zinc-900/50 border border-white/5 py-1 px-2.5 rounded-lg">
+            <div className="hidden sm:flex items-center gap-1 text-xs text-theme-fg/50 bg-theme-card border border-theme-border py-1 px-2.5 rounded-theme-radius">
               {isSyncing ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin text-purple-500" />
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-theme-accent" />
               ) : (
                 <Cloud className="h-3.5 w-3.5 text-emerald-500" />
               )}
@@ -470,23 +532,23 @@ export default function Home() {
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-1 border border-white/5 hover:border-white/20 rounded-md transition-all cursor-pointer p-0.5"
+                className="flex items-center gap-1 border border-theme-border hover:border-theme-border-hover rounded-theme-radius transition-all cursor-pointer p-0.5"
               >
-                {/* Glowing Amethyst gradient user avatar */}
-                <div className="h-7 w-7 rounded bg-gradient-to-tr from-purple-600 to-fuchsia-600 flex items-center justify-center font-bold text-xs text-white border border-white/15 select-none shadow-md shadow-purple-500/15">
+                {/* Glowing user avatar */}
+                <div className="h-7 w-7 rounded-theme-radius bg-gradient-to-tr from-theme-accent to-theme-secondary flex items-center justify-center font-bold text-xs text-theme-btn-text border border-white/15 select-none shadow-md shadow-theme-accent/15">
                   {user.email?.[0]?.toUpperCase() || 'U'}
                 </div>
-                <ChevronDown className="h-3 w-3 text-zinc-500 transition-transform duration-200" style={{ transform: isUserMenuOpen ? 'rotate(180deg)' : 'none' }} />
+                <ChevronDown className="h-3 w-3 text-theme-fg/50 transition-transform duration-200" style={{ transform: isUserMenuOpen ? 'rotate(180deg)' : 'none' }} />
               </button>
 
               {isUserMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsUserMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2.5 w-52 rounded-lg border border-white/15 bg-[#110e1a] p-2 shadow-2xl z-50 animate-scale-in">
-                    <div className="px-3 py-2 border-b border-white/5 text-4xs text-zinc-500 font-bold uppercase tracking-wider">
+                  <div className="absolute right-0 mt-2.5 w-52 rounded-theme-radius border border-theme-border bg-theme-panel p-2 shadow-2xl z-50 animate-scale-in">
+                    <div className="px-3 py-2 border-b border-theme-border text-4xs text-theme-fg/50 font-bold uppercase tracking-wider font-theme-head">
                       Account Profile
                     </div>
-                    <div className="px-3 py-2 text-2xs text-zinc-300 truncate font-semibold">
+                    <div className="px-3 py-2 text-2xs text-theme-fg truncate font-semibold">
                       {user.email}
                     </div>
                     <button
@@ -496,7 +558,7 @@ export default function Home() {
                           await logOut();
                         }
                       }}
-                      className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer mt-1"
+                      className="w-full flex items-center gap-2 rounded-theme-radius px-3 py-2 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer mt-1"
                     >
                       <LogOut className="h-3.5 w-3.5" />
                       <span>Log Out</span>
@@ -508,7 +570,7 @@ export default function Home() {
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-4 rounded-md shadow-md text-xs transition-all cursor-pointer"
+              className="bg-theme-accent hover:bg-theme-accent-hover text-theme-btn-text font-bold py-1.5 px-4 rounded-theme-radius shadow-md text-xs transition-all cursor-pointer"
             >
               Sign In
             </button>
@@ -521,24 +583,24 @@ export default function Home() {
         
         {/* Render Search Results Grid Overlay if query is active */}
         {searchQuery.trim() !== '' ? (
-          <div className="w-full px-4 md:px-10 py-6 overflow-y-auto h-full amethyst-scrollbar bg-black text-white pb-24">
-            <h3 className="text-lg md:text-xl font-black text-zinc-400 mb-6 uppercase tracking-tight">
-              Search Results for <span className="text-white italic font-bold">"{searchQuery}"</span>
+          <div className="w-full px-4 md:px-10 py-6 overflow-y-auto h-full amethyst-scrollbar bg-theme-bg text-theme-fg pb-24">
+            <h3 className="text-lg md:text-xl font-black text-theme-fg/60 mb-6 uppercase tracking-tight font-theme-head">
+              Search Results for <span className="text-theme-fg italic font-bold">"{searchQuery}"</span>
             </h3>
 
             {isSearching ? (
               <div className="w-full py-16 flex flex-col items-center justify-center gap-3">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest animate-pulse">Searching Cinema Index...</p>
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-theme-accent border-t-transparent shadow-lg" />
+                <p className="text-xs font-bold text-theme-fg/50 uppercase tracking-widest animate-pulse">Searching Cinema Index...</p>
               </div>
             ) : searchResults.length === 0 ? (
-              <div className="w-full py-16 text-center text-zinc-500">
-                <Film className="h-10 w-10 mx-auto text-zinc-700 mb-3" />
-                <p className="font-semibold text-sm">No movies match your search query.</p>
-                <p className="text-xs text-zinc-600 mt-1">Try searching by genre, title, or keywords.</p>
+              <div className="w-full py-16 text-center text-theme-fg/50">
+                <Film className="h-10 w-10 mx-auto text-theme-fg/20 mb-3" />
+                <p className="font-semibold text-sm font-theme-body">No movies match your search query.</p>
+                <p className="text-xs text-theme-fg/40 mt-1">Try searching by genre, title, or keywords.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 pt-2 font-theme-body">
                 {searchResults.map((movie) => {
                   const isSaved = watchlistSet.has(movie.id);
                   const matchPercentage = Math.round(75 + (movie.rating / 10) * 23);
@@ -546,7 +608,7 @@ export default function Home() {
                     <div
                       key={`search-${movie.id}`}
                       onClick={() => setSelectedMovie(movie)}
-                      className="group relative rounded-lg overflow-hidden border border-white/5 bg-[#181526] shadow-md hover:border-purple-500/20 transition-all duration-300 hover:scale-105 cursor-pointer"
+                      className="group relative rounded-theme-radius overflow-hidden border border-theme-border bg-theme-card shadow-md hover:border-theme-border-hover transition-all duration-300 hover:scale-105 cursor-pointer"
                     >
                       <div className="relative aspect-[2/3] w-full">
                         <Image
@@ -556,16 +618,16 @@ export default function Home() {
                           className="object-cover"
                         />
                         {/* Rating Overlay */}
-                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-3xs text-3xs font-extrabold text-white px-2 py-0.5 rounded border border-white/5 flex items-center gap-0.5">
+                        <div className="absolute top-2 left-2 bg-theme-panel/60 backdrop-blur-3xs text-3xs font-extrabold text-theme-fg px-2 py-0.5 rounded border border-theme-border flex items-center gap-0.5">
                           <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                           {movie.rating.toFixed(1)}
                         </div>
                       </div>
-                      <div className="p-3 space-y-1 bg-[#110e1a]">
-                        <h4 className="text-xs font-bold text-white leading-tight truncate uppercase">
+                      <div className="p-3 space-y-1 bg-theme-panel">
+                        <h4 className="text-xs font-bold text-theme-fg leading-tight truncate uppercase font-theme-head">
                           {movie.title}
                         </h4>
-                        <div className="flex items-center justify-between text-4xs text-zinc-400 font-semibold pt-1">
+                        <div className="flex items-center justify-between text-4xs text-theme-fg/60 font-semibold pt-1">
                           <span className="text-emerald-400">{matchPercentage}% Match</span>
                           <span>{movie.releaseYear}</span>
                         </div>
@@ -583,7 +645,7 @@ export default function Home() {
             {activeTab === 'swipe' && (
               <div className="flex-grow flex overflow-hidden h-full">
                 {/* Desktop Left Sidebar: Filters */}
-                <aside className="hidden md:block w-76 p-6 flex-shrink-0 border-r border-white/5 overflow-y-auto h-full bg-black">
+                <aside className="hidden md:block w-76 p-6 flex-shrink-0 border-r border-theme-border overflow-y-auto h-full bg-theme-bg">
                   <Filters
                     filters={filters}
                     onChange={setFilters}
@@ -592,7 +654,7 @@ export default function Home() {
                 </aside>
 
                 {/* Center Swiping Deck Viewport */}
-                <main className="flex-grow flex items-center justify-center p-4 md:p-6 h-full bg-zinc-950/20">
+                <main className="flex-grow flex items-center justify-center p-4 md:p-6 h-full bg-theme-bg/10">
                   <SwipeDeck
                     movies={filteredDeck}
                     onSwipe={handleSwipe}
@@ -603,7 +665,7 @@ export default function Home() {
                 </main>
 
                 {/* Desktop Right Sidebar: Watchlist */}
-                <aside className="hidden lg:block w-80 flex-shrink-0 border-l border-white/5 h-full bg-black">
+                <aside className="hidden lg:block w-80 flex-shrink-0 border-l border-theme-border h-full bg-theme-bg">
                   <Watchlist
                     watchlist={watchlist}
                     onRemove={handleRemoveFromWatchlist}
@@ -631,16 +693,16 @@ export default function Home() {
 
             {/* 3. Dedicated Watchlist View */}
             {activeTab === 'watchlist' && (
-              <div className="w-full h-full overflow-hidden flex flex-col lg:flex-row bg-black">
+              <div className="w-full h-full overflow-hidden flex flex-col lg:flex-row bg-theme-bg">
                 {/* Main Watchlist Container */}
                 <div className="flex-1 p-6 overflow-y-auto h-full amethyst-scrollbar pb-24">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
+                  <div className="flex items-center justify-between border-b border-theme-border pb-4 mb-6">
                     <div>
-                      <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                        <Heart className="h-5.5 w-5.5 text-purple-500 fill-purple-500" />
+                      <h2 className="text-xl md:text-2xl font-black text-theme-fg uppercase tracking-tight flex items-center gap-2 font-theme-head">
+                        <Heart className="h-5.5 w-5.5 text-theme-accent fill-theme-accent" />
                         My Watchlist
                       </h2>
-                      <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wider mt-1">
+                      <p className="text-xs text-theme-fg/50 font-semibold uppercase tracking-wider mt-1">
                         {watchlist.length} {watchlist.length === 1 ? 'saved film' : 'saved films'}
                       </p>
                     </div>
@@ -648,7 +710,7 @@ export default function Home() {
                     {watchlist.length > 0 && (
                       <button
                         onClick={handleStartOver}
-                        className="text-xs bg-zinc-900 border border-white/10 hover:border-purple-500/30 text-zinc-400 hover:text-purple-400 py-2 px-4 rounded-xl transition-colors cursor-pointer"
+                        className="text-xs bg-theme-panel border border-theme-border hover:border-theme-border-hover text-theme-fg/60 hover:text-theme-accent py-2 px-4 rounded-theme-radius transition-colors cursor-pointer"
                       >
                         Reset Watchlist
                       </button>
@@ -656,26 +718,26 @@ export default function Home() {
                   </div>
 
                   {watchlist.length === 0 ? (
-                    <div className="py-24 text-center select-none">
-                      <Film className="h-12 w-12 mx-auto text-zinc-700 mb-4 animate-pulse" />
-                      <h3 className="text-lg font-bold text-zinc-300">Your Watchlist is Empty</h3>
-                      <p className="text-xs text-zinc-500 mt-1 max-w-xs mx-auto leading-relaxed">
+                    <div className="py-24 text-center select-none font-theme-body">
+                      <Film className="h-12 w-12 mx-auto text-theme-fg/20 mb-4 animate-pulse" />
+                      <h3 className="text-lg font-bold text-theme-fg/80 font-theme-head">Your Watchlist is Empty</h3>
+                      <p className="text-xs text-theme-fg/40 mt-1 max-w-xs mx-auto leading-relaxed">
                         Start swiping right in "Swipe Match" or add titles directly from "Browse Dashboard" to save movies here!
                       </p>
                       <button
                         onClick={() => setActiveTab('swipe')}
-                        className="mt-6 px-6 py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition-colors shadow-lg"
+                        className="mt-6 px-6 py-2.5 rounded-theme-radius bg-theme-accent text-theme-btn-text text-xs font-bold hover:bg-theme-accent-hover transition-colors shadow-lg"
                       >
                         Go Swiping
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 font-theme-body">
                       {watchlist.map((movie) => (
                         <div
                           key={`watchlist-tab-${movie.id}`}
                           onClick={() => setSelectedMovie(movie)}
-                          className="group relative rounded-lg overflow-hidden border border-white/5 bg-[#181526] shadow-md hover:border-purple-500/20 transition-all duration-300 hover:scale-105 cursor-pointer"
+                          className="group relative rounded-theme-radius overflow-hidden border border-theme-border bg-theme-card shadow-md hover:border-theme-border-hover transition-all duration-300 hover:scale-105 cursor-pointer"
                         >
                           <div className="relative aspect-[2/3] w-full">
                             <Image
@@ -685,24 +747,24 @@ export default function Home() {
                               className="object-cover"
                             />
                             {/* Score Overlay */}
-                            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-3xs text-3xs font-extrabold text-white px-2 py-0.5 rounded border border-white/5 flex items-center gap-0.5">
+                            <div className="absolute top-2 left-2 bg-theme-panel/60 backdrop-blur-3xs text-3xs font-extrabold text-theme-fg px-2 py-0.5 rounded border border-theme-border flex items-center gap-0.5">
                               <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                               {movie.rating.toFixed(1)}
                             </div>
                           </div>
-                          <div className="p-3 bg-[#110e1a] flex items-center justify-between">
+                          <div className="p-3 bg-theme-panel flex items-center justify-between">
                             <div className="min-w-0 pr-4">
-                              <h4 className="text-xs font-bold text-white leading-tight truncate uppercase">
+                              <h4 className="text-xs font-bold text-theme-fg leading-tight truncate uppercase font-theme-head">
                                 {movie.title}
                               </h4>
-                              <p className="text-4xs text-zinc-500 font-semibold pt-0.5">{movie.releaseYear} • {movie.runtime}m</p>
+                              <p className="text-4xs text-theme-fg/50 font-semibold pt-0.5">{movie.releaseYear} • {movie.runtime}m</p>
                             </div>
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveFromWatchlist(movie.id);
+                                  e.stopPropagation();
+                                  handleRemoveFromWatchlist(movie.id);
                               }}
-                              className="p-1.5 rounded-md hover:bg-purple-500/10 text-zinc-500 hover:text-purple-400 transition-colors"
+                              className="p-1.5 rounded-theme-radius hover:bg-theme-accent/10 text-theme-fg/50 hover:text-theme-accent transition-colors"
                               title="Delete from Watchlist"
                             >
                               ✕
@@ -716,10 +778,10 @@ export default function Home() {
 
                 {/* Recommendations sidebar in Watchlist view */}
                 {recommendations.length > 0 && (
-                  <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-white/5 p-6 h-full overflow-y-auto amethyst-scrollbar">
+                  <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-theme-border p-6 h-full overflow-y-auto amethyst-scrollbar">
                     <div className="flex items-center gap-2 mb-6">
-                      <Sparkles className="h-5 w-5 text-purple-500 animate-pulse" />
-                      <h3 className="text-sm font-extrabold text-zinc-350 uppercase tracking-widest">
+                      <Sparkles className="h-5 w-5 text-theme-accent animate-pulse" />
+                      <h3 className="text-sm font-extrabold text-theme-fg/80 uppercase tracking-widest font-theme-head">
                         Recommended For You
                       </h3>
                     </div>
@@ -728,9 +790,9 @@ export default function Home() {
                         <div
                           key={`watchlist-rec-${movie.id}`}
                           onClick={() => setSelectedMovie(movie)}
-                          className="group relative flex gap-3 p-2.5 rounded-xl border border-white/5 bg-zinc-900/40 hover:bg-[#181526]/80 transition-all duration-200 cursor-pointer"
+                          className="group relative flex gap-3 p-2.5 rounded-theme-radius border border-theme-border bg-theme-card/45 hover:bg-theme-card transition-all duration-200 cursor-pointer"
                         >
-                          <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded-lg bg-zinc-800">
+                          <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded-[calc(var(--border-radius)*0.75)] bg-theme-panel">
                             <Image
                               src={movie.posterUrl}
                               alt={movie.title}
@@ -739,11 +801,11 @@ export default function Home() {
                               className="object-cover"
                             />
                           </div>
-                          <div className="flex-grow min-w-0 pr-6">
-                            <h4 className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors truncate uppercase">
+                          <div className="flex-grow min-w-0 pr-6 font-theme-body">
+                            <h4 className="text-xs font-bold text-theme-fg group-hover:text-theme-accent transition-colors truncate uppercase font-theme-head">
                               {movie.title}
                             </h4>
-                            <div className="flex items-center gap-1.5 mt-1 text-4xs font-bold text-zinc-400">
+                            <div className="flex items-center gap-1.5 mt-1 text-4xs font-bold text-theme-fg/60">
                               <span className="text-amber-500">{movie.rating.toFixed(1)} IMDb</span>
                               <span>•</span>
                               <span>{movie.releaseYear}</span>
@@ -754,7 +816,7 @@ export default function Home() {
                               e.stopPropagation();
                               handleSaveRecommendation(movie);
                             }}
-                            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 bg-purple-600 hover:bg-purple-750 text-white rounded-full shadow transition-all duration-200 hover:scale-105"
+                            className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1.5 bg-theme-accent hover:bg-theme-accent-hover text-theme-btn-text rounded-full shadow transition-all duration-200 hover:scale-105"
                           >
                             <Plus className="h-3.5 w-3.5" />
                           </button>
@@ -767,14 +829,14 @@ export default function Home() {
             )}
           </>
         )}
-
+ 
         {/* Mobile Slide-in Filters Modal */}
         {isMobileFiltersOpen && (
-          <div className="fixed inset-0 z-45 md:hidden flex flex-col justify-start pt-20 p-6 bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-45 md:hidden flex flex-col justify-start pt-20 p-6 bg-theme-bg/95 backdrop-blur-md animate-in fade-in duration-200">
             <div className="absolute top-4 right-4">
               <button
                 onClick={() => setIsMobileFiltersOpen(false)}
-                className="p-2 rounded-full border border-white/10 bg-zinc-900 text-zinc-400 hover:text-white cursor-pointer"
+                className="p-2 rounded-full border border-theme-border bg-theme-panel text-theme-fg/60 hover:text-theme-fg cursor-pointer"
               >
                 ✕
               </button>
@@ -787,7 +849,7 @@ export default function Home() {
               />
               <button
                 onClick={() => setIsMobileFiltersOpen(false)}
-                className="w-full mt-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg cursor-pointer"
+                className="w-full mt-6 py-3 bg-theme-accent hover:bg-theme-accent-hover text-theme-btn-text font-bold rounded-theme-radius shadow-lg cursor-pointer"
               >
                 Apply Filters
               </button>
@@ -795,54 +857,54 @@ export default function Home() {
           </div>
         )}
       </div>
-
+ 
       {/* Responsive Mobile Bottom Navigation Bar */}
-      <footer className="fixed bottom-0 left-0 right-0 h-16 bg-[#0f0c18]/95 border-t border-white/5 flex items-center justify-around z-40 md:hidden backdrop-blur-md">
+      <footer className="fixed bottom-0 left-0 right-0 h-16 bg-theme-panel/95 border-t border-theme-border flex items-center justify-around z-40 md:hidden backdrop-blur-md font-theme-body">
         <button
           onClick={() => { setActiveTab('swipe'); setSearchQuery(''); }}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-            activeTab === 'swipe' && !searchQuery ? 'text-purple-400 font-bold' : 'text-zinc-500 hover:text-zinc-300'
+            activeTab === 'swipe' && !searchQuery ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
           }`}
         >
           <Film className="h-5 w-5" />
           <span className="text-4xs font-bold uppercase tracking-wider">Swipe Match</span>
         </button>
-
+ 
         <button
           onClick={() => { setActiveTab('browse'); setSearchQuery(''); }}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-colors ${
-            activeTab === 'browse' && !searchQuery ? 'text-purple-400 font-bold' : 'text-zinc-500 hover:text-zinc-300'
+            activeTab === 'browse' && !searchQuery ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
           }`}
         >
           <Compass className="h-5 w-5" />
           <span className="text-4xs font-bold uppercase tracking-wider">Browse</span>
         </button>
-
+ 
         <button
           onClick={() => { setActiveTab('watchlist'); setSearchQuery(''); }}
           className={`flex flex-col items-center gap-1 cursor-pointer relative transition-colors ${
-            activeTab === 'watchlist' && !searchQuery ? 'text-purple-400 font-bold' : 'text-zinc-500 hover:text-zinc-300'
+            activeTab === 'watchlist' && !searchQuery ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
           }`}
         >
           <Heart className="h-5 w-5" />
           {watchlist.length > 0 && (
-            <span className="absolute -top-1.5 -right-2 bg-purple-600 text-white text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center animate-scale-in">
+            <span className="absolute -top-1.5 -right-2 bg-theme-accent text-theme-btn-text text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center animate-scale-in">
               {watchlist.length}
             </span>
           )}
           <span className="text-4xs font-bold uppercase tracking-wider">Watchlist</span>
         </button>
-
+ 
         {activeTab === 'swipe' && (
           <button
             onClick={() => setIsMobileFiltersOpen(true)}
             className={`flex flex-col items-center gap-1 cursor-pointer relative transition-colors ${
-              isMobileFiltersOpen ? 'text-purple-400' : 'text-zinc-500 hover:text-zinc-300'
+              isMobileFiltersOpen ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
             }`}
           >
             <Filter className="h-5 w-5" />
             {activeFiltersCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-purple-600 text-white text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-2 bg-theme-accent text-theme-btn-text text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center">
                 {activeFiltersCount}
               </span>
             )}
@@ -861,10 +923,10 @@ export default function Home() {
       {playTrailerMovie && playTrailerMovie.trailerUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
           <div className="absolute inset-0" onClick={() => setPlayTrailerMovie(null)} />
-          <div className="relative w-full max-w-3xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black z-50 shadow-2xl animate-in zoom-in-95">
+          <div className="relative w-full max-w-3xl aspect-video rounded-theme-radius overflow-hidden border border-theme-border bg-black z-50 shadow-2xl animate-in zoom-in-95">
             <button
               onClick={() => setPlayTrailerMovie(null)}
-              className="absolute top-4 right-4 z-20 rounded-full border border-white/10 bg-black/60 p-2 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="absolute top-4 right-4 z-20 rounded-full border border-theme-border bg-theme-panel/60 p-2 text-theme-fg/60 hover:text-theme-fg transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -886,6 +948,7 @@ export default function Home() {
         recommendations={recommendations}
         watchlist={watchlist}
         onSaveRecommendation={handleSaveRecommendation}
+        currentTheme={currentTheme}
       />
 
       {/* Authentication Modal */}

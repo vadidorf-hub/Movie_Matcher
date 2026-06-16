@@ -103,17 +103,17 @@ export default function SwipeDeck({
           </>
         ) : (
           /* Empty Deck State */
-          <div className="absolute inset-0 w-full h-full rounded-3xl border border-dashed border-white/10 bg-zinc-950/50 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center">
-            <div className="p-4 rounded-full bg-zinc-900 border border-white/5 text-zinc-500 mb-4 animate-pulse">
+          <div className="absolute inset-0 w-full h-full rounded-theme-radius border border-dashed border-theme-border bg-theme-panel/50 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center font-theme-body">
+            <div className="p-4 rounded-full bg-theme-card border border-theme-border text-theme-fg/40 mb-4 animate-pulse">
               <Film className="h-10 w-10" />
             </div>
-            <h3 className="text-xl font-bold text-zinc-200 mb-2">Out of Matches</h3>
-            <p className="text-sm text-zinc-500 mb-6 leading-relaxed">
+            <h3 className="text-xl font-bold text-theme-fg mb-2 font-theme-head">Out of Matches</h3>
+            <p className="text-sm text-theme-fg/60 mb-6 leading-relaxed">
               You&apos;ve swiped through all available movies. Try resetting your filters or restarting the deck!
             </p>
             <button
               onClick={onResetDeck}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-indigo-600/10 hover:from-violet-500 hover:to-indigo-500 active:scale-97 transition-all duration-200 cursor-pointer"
+              className="px-6 py-2.5 rounded-theme-radius bg-theme-accent hover:bg-theme-accent-hover text-sm font-semibold text-theme-btn-text shadow-lg border border-theme-border active:scale-97 transition-all duration-200 cursor-pointer"
             >
               Start Over
             </button>
@@ -130,8 +130,8 @@ export default function SwipeDeck({
             disabled={!canUndo}
             className={`flex items-center justify-center rounded-full p-3.5 border transition-all duration-200 active:scale-90 shadow-md ${
               canUndo
-                ? 'bg-zinc-900 border-white/10 text-zinc-400 hover:text-amber-500 hover:border-amber-500/40 hover:shadow-amber-500/5 cursor-pointer hover:scale-105'
-                : 'bg-zinc-900/40 text-zinc-600 border-white/5 cursor-not-allowed'
+                ? 'bg-theme-card border-theme-border text-theme-fg/60 hover:text-amber-500 hover:border-amber-500/40 hover:shadow-amber-500/5 cursor-pointer hover:scale-105'
+                : 'bg-theme-card/45 text-theme-fg/20 border-theme-border/30 cursor-not-allowed'
             }`}
             title="Rewind Last Swipe (R)"
           >
@@ -141,7 +141,7 @@ export default function SwipeDeck({
           {/* Nope / Dislike */}
           <button
             onClick={() => handleButtonSwipe('left')}
-            className="flex items-center justify-center rounded-full bg-zinc-900 border border-white/10 hover:border-fuchsia-500 hover:text-fuchsia-500 text-zinc-400 hover:shadow-fuchsia-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
+            className="flex items-center justify-center rounded-full bg-theme-card border border-theme-border hover:border-theme-secondary hover:text-theme-secondary text-theme-fg/60 hover:shadow-theme-secondary/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
             title="Dismiss Movie (ArrowLeft)"
           >
             <X className="h-7 w-7" />
@@ -150,7 +150,7 @@ export default function SwipeDeck({
           {/* Super Like */}
           <button
             onClick={() => handleButtonSwipe('up')}
-            className="flex items-center justify-center rounded-full bg-zinc-900 border border-white/10 hover:border-sky-400 hover:text-sky-400 text-zinc-400 hover:shadow-sky-500/5 hover:scale-105 active:scale-90 p-3.5 shadow-md cursor-pointer transition-all duration-200"
+            className="flex items-center justify-center rounded-full bg-theme-card border border-theme-border hover:border-sky-400 hover:text-sky-400 text-theme-fg/60 hover:shadow-sky-500/5 hover:scale-105 active:scale-90 p-3.5 shadow-md cursor-pointer transition-all duration-200"
             title="Super Like (ArrowUp)"
           >
             <Star className="h-5 w-5 fill-transparent hover:fill-sky-400" />
@@ -159,7 +159,7 @@ export default function SwipeDeck({
           {/* Like */}
           <button
             onClick={() => handleButtonSwipe('right')}
-            className="flex items-center justify-center rounded-full bg-zinc-900 border border-white/10 hover:border-emerald-500 hover:text-emerald-500 text-zinc-400 hover:shadow-emerald-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
+            className="flex items-center justify-center rounded-full bg-theme-card border border-theme-border hover:border-emerald-500 hover:text-emerald-500 text-theme-fg/60 hover:shadow-emerald-500/5 hover:scale-105 active:scale-90 p-4.5 shadow-lg cursor-pointer transition-all duration-200"
             title="Save to Watchlist (ArrowRight)"
           >
             <Heart className="h-7 w-7 fill-transparent hover:fill-emerald-500" />
@@ -169,8 +169,8 @@ export default function SwipeDeck({
 
       {/* Keyboard Shortcuts Hint */}
       {activeMovie && (
-        <div className="flex items-center gap-1.5 justify-center mt-6 text-3xs text-zinc-500 font-medium select-none bg-zinc-950/30 px-3 py-1 rounded-full border border-white/5">
-          <Keyboard className="h-3 w-3 text-zinc-500" />
+        <div className="flex items-center gap-1.5 justify-center mt-6 text-3xs text-theme-fg/40 font-medium select-none bg-theme-panel/30 px-3 py-1 rounded-theme-radius border border-theme-border">
+          <Keyboard className="h-3 w-3 text-theme-fg/40" />
           <span>Use keyboard arrows to swipe • R to undo</span>
         </div>
       )}

@@ -57,22 +57,22 @@ export default function NetflixBrowse({
   if (loading) {
     return (
       <div className="w-full py-24 flex flex-col items-center justify-center gap-3">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-purple-500 border-t-transparent" />
-        <p className="text-sm font-semibold text-zinc-400 tracking-wider animate-pulse uppercase">Assembling Cinema Dashboard...</p>
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-theme-accent border-t-transparent" />
+        <p className="text-sm font-semibold text-theme-fg/60 tracking-wider animate-pulse uppercase font-theme-body">Assembling Cinema Dashboard...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full py-16 text-center text-red-500 font-semibold">
+      <div className="w-full py-16 text-center text-red-500 font-semibold font-theme-body">
         Error loading browse categories: {error}
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-10 py-6 px-4 md:px-10 overflow-y-auto h-full amethyst-scrollbar bg-black text-white">
+    <div className="w-full space-y-10 py-6 px-4 md:px-10 overflow-y-auto h-full amethyst-scrollbar bg-theme-bg text-theme-fg">
       {/* Hero Movie Feature Banner */}
       {browseData?.trending?.[0] && (
         <HeroBanner
@@ -175,7 +175,7 @@ function HeroBanner({
   isSaved: boolean;
 }) {
   return (
-    <div className="relative w-full h-[55vh] md:h-[65vh] rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+    <div className="relative w-full h-[55vh] md:h-[65vh] rounded-theme-radius overflow-hidden border border-theme-border shadow-2xl">
       {/* Background Image */}
       <Image
         src={movie.backdropUrl}
@@ -185,32 +185,32 @@ function HeroBanner({
         priority
       />
       {/* Gradient Vignette */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-theme-bg via-theme-bg/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-theme-bg/85 via-theme-bg/30 to-transparent" />
 
       {/* Hero Content */}
-      <div className="absolute bottom-10 left-6 md:left-12 max-w-xl space-y-4">
+      <div className="absolute bottom-10 left-6 md:left-12 max-w-xl space-y-4 font-theme-body">
         {/* Brand Tag */}
-        <div className="flex items-center gap-1.5 text-xs text-purple-400 font-black tracking-widest uppercase">
-          <span className="text-xl">M</span>
-          <span className="text-3xs tracking-widest font-extrabold text-zinc-300">Matchmaker Exclusive</span>
+        <div className="flex items-center gap-1.5 text-xs text-theme-accent font-black tracking-widest uppercase">
+          <span className="text-xl font-theme-head">M</span>
+          <span className="text-3xs tracking-widest font-extrabold text-theme-fg/60">Matchmaker Exclusive</span>
         </div>
 
         {/* Title */}
-        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight uppercase">
+        <h2 className="text-3xl md:text-5xl font-black tracking-tight text-theme-fg leading-tight uppercase font-theme-head">
           {movie.title}
         </h2>
 
         {/* Info Line */}
-        <div className="flex items-center gap-3 text-xs md:text-sm font-semibold text-zinc-300">
+        <div className="flex items-center gap-3 text-xs md:text-sm font-semibold">
           <span className="text-emerald-400 font-extrabold">98% Match</span>
-          <span className="px-1.5 py-0.5 border border-zinc-500 rounded text-3xs uppercase tracking-wider text-zinc-400 font-black bg-black/20">PG-13</span>
+          <span className="px-1.5 py-0.5 border border-theme-border rounded text-3xs uppercase tracking-wider text-theme-fg/50 font-black bg-theme-panel/20">PG-13</span>
           <span>{movie.releaseYear}</span>
           <span>{movie.runtime} min</span>
         </div>
 
         {/* Description */}
-        <p className="text-zinc-300 text-xs md:text-sm leading-relaxed max-w-lg line-clamp-3 md:line-clamp-4">
+        <p className="text-theme-fg/80 text-xs md:text-sm leading-relaxed max-w-lg line-clamp-3 md:line-clamp-4">
           {movie.overview}
         </p>
 
@@ -219,19 +219,19 @@ function HeroBanner({
           {movie.trailerUrl && (
             <button
               onClick={() => onPlayTrailer(movie)}
-              className="flex items-center gap-2 bg-white hover:bg-white/90 text-black py-2.5 px-6 rounded-xl font-bold transition-all hover:scale-105 duration-200 cursor-pointer shadow-lg text-sm"
+              className="flex items-center gap-2 bg-theme-fg hover:bg-theme-fg/90 text-theme-bg py-2.5 px-6 rounded-theme-radius font-bold transition-all hover:scale-105 duration-200 cursor-pointer shadow-lg text-sm"
             >
-              <Play className="h-4 w-4 fill-black text-black" />
+              <Play className="h-4 w-4 fill-current text-current" />
               Play Trailer
             </button>
           )}
 
           <button
             onClick={() => isSaved ? onRemoveFromWatchlist(movie.id) : onSaveToWatchlist(movie)}
-            className={`flex items-center gap-2 py-2.5 px-6 rounded-xl font-bold transition-all hover:scale-105 duration-200 cursor-pointer text-sm border ${
+            className={`flex items-center gap-2 py-2.5 px-6 rounded-theme-radius font-bold transition-all hover:scale-105 duration-200 cursor-pointer text-sm border ${
               isSaved
-                ? 'bg-purple-600 hover:bg-purple-750 border-purple-500 text-white'
-                : 'bg-zinc-900/80 hover:bg-zinc-800 border-white/10 text-white'
+                ? 'bg-theme-accent hover:bg-theme-accent-hover border-theme-accent text-theme-btn-text'
+                : 'bg-theme-panel hover:bg-theme-card border-theme-border text-theme-fg'
             }`}
           >
             {isSaved ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -240,9 +240,9 @@ function HeroBanner({
 
           <button
             onClick={() => onSelectMovie(movie)}
-            className="flex items-center gap-2 bg-zinc-900/60 hover:bg-zinc-900/90 border border-white/10 text-white py-2.5 px-6 rounded-xl font-bold transition-all hover:scale-105 duration-200 cursor-pointer text-sm"
+            className="flex items-center gap-2 bg-theme-panel/60 hover:bg-theme-panel border border-theme-border text-theme-fg py-2.5 px-6 rounded-theme-radius font-bold transition-all hover:scale-105 duration-200 cursor-pointer text-sm"
           >
-            <Info className="h-4 w-4 text-zinc-400" />
+            <Info className="h-4 w-4 text-theme-fg/60" />
             More Info
           </button>
         </div>
@@ -297,7 +297,7 @@ function CategoryRow({
   return (
     <div className="space-y-2 relative group/row">
       {/* Category Title */}
-      <h3 className="text-md md:text-lg font-black tracking-tight text-zinc-200 pl-1 uppercase">
+      <h3 className="text-md md:text-lg font-black tracking-tight text-theme-fg pl-1 uppercase font-theme-head">
         {title}
       </h3>
 
@@ -307,7 +307,7 @@ function CategoryRow({
         {showLeftArrow && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 top-0 bottom-0 z-40 bg-black/70 hover:bg-black/85 text-white w-10 md:w-12 flex items-center justify-center cursor-pointer transition-all duration-200 border-r border-white/5 opacity-0 group-hover/row:opacity-100"
+            className="absolute left-0 top-0 bottom-0 z-40 bg-theme-panel/75 hover:bg-theme-panel text-theme-fg w-10 md:w-12 flex items-center justify-center cursor-pointer transition-all duration-200 border-r border-theme-border opacity-0 group-hover/row:opacity-100"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
@@ -317,7 +317,7 @@ function CategoryRow({
         {showRightArrow && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 top-0 bottom-0 z-40 bg-black/70 hover:bg-black/85 text-white w-10 md:w-12 flex items-center justify-center cursor-pointer transition-all duration-200 border-l border-white/5 opacity-0 group-hover/row:opacity-100"
+            className="absolute right-0 top-0 bottom-0 z-45 bg-theme-panel/75 hover:bg-theme-panel text-theme-fg w-10 md:w-12 flex items-center justify-center cursor-pointer transition-all duration-200 border-l border-theme-border opacity-0 group-hover/row:opacity-100"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
@@ -450,10 +450,10 @@ function BrowseCard({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleCardClick}
-        className="relative flex-shrink-0 w-28 sm:w-36 md:w-44 aspect-[2/3] rounded-lg cursor-pointer transition-transform duration-300 active:scale-95"
+        className="relative flex-shrink-0 w-28 sm:w-36 md:w-44 aspect-[2/3] rounded-theme-radius cursor-pointer transition-transform duration-300 active:scale-95"
       >
         {/* Standard Static Card Poster / Inline Video Preview */}
-        <div className="relative w-full h-full overflow-hidden rounded-lg border border-white/5 bg-zinc-900 shadow-lg select-none pointer-events-none">
+        <div className="relative w-full h-full overflow-hidden rounded-theme-radius border border-theme-border bg-theme-card shadow-lg select-none pointer-events-none">
           {playHoverVideo && movie.trailerUrl ? (
             <iframe
               src={`${movie.trailerUrl}?autoplay=1&mute=1&controls=0&start=0&end=15&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&enablejsapi=1`}
@@ -471,8 +471,8 @@ function BrowseCard({
               className="object-cover"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-2.5">
-            <span className="text-3xs font-extrabold text-white truncate w-full uppercase">
+          <div className="absolute inset-0 bg-gradient-to-t from-theme-bg/85 via-theme-bg/10 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-2.5">
+            <span className="text-3xs font-extrabold text-theme-fg truncate w-full uppercase font-theme-head">
               {movie.title}
             </span>
           </div>
@@ -486,7 +486,7 @@ function BrowseCard({
             <>
               {/* Fullscreen dimming backdrop overlay to catch clicks outside the popup */}
               <div 
-                className="fixed inset-0 bg-black/70 z-[9998] backdrop-blur-3xs"
+                className="fixed inset-0 bg-theme-bg/75 z-[9998] backdrop-blur-3xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsClicked(false);
@@ -507,10 +507,10 @@ function BrowseCard({
                   zIndex: 9999,
                   transformOrigin: isFirst ? 'left top' : isLast ? 'right top' : 'center top',
                 }}
-                className="rounded-2xl border border-white/10 bg-[#0d0a1a] shadow-2xl overflow-hidden flex flex-col pointer-events-auto"
+                className="rounded-theme-radius border border-theme-border bg-theme-panel shadow-2xl overflow-hidden flex flex-col pointer-events-auto"
               >
                 {/* Header backdrop inside clicked card */}
-                <div className="relative w-full aspect-video bg-black overflow-hidden">
+                <div className="relative w-full aspect-video bg-theme-bg overflow-hidden">
                   {movie.trailerUrl ? (
                     <iframe
                       src={`${movie.trailerUrl}?autoplay=1&mute=0&controls=0&start=0&end=20&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&enablejsapi=1`}
@@ -528,14 +528,14 @@ function BrowseCard({
                       className="object-cover"
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0d0a1a] via-transparent to-transparent pointer-events-none" />
-                  <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-3xs text-3xs font-extrabold text-white px-2 py-0.5 rounded border border-white/5 flex items-center gap-0.5 z-10 pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-t from-theme-panel via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute top-2.5 left-2.5 bg-theme-bg/60 backdrop-blur-3xs text-3xs font-extrabold text-theme-fg px-2 py-0.5 rounded border border-theme-border flex items-center gap-0.5 z-10 pointer-events-none">
                     <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                     {movie.rating.toFixed(1)}
                   </div>
                   {movie.trailerUrl && (
-                    <div className="absolute bottom-2.5 right-2.5 bg-black/60 backdrop-blur-3xs text-3xs font-extrabold text-white px-2 py-0.5 rounded border border-white/5 flex items-center gap-1 z-10 pointer-events-none uppercase tracking-wider animate-pulse">
-                      <Volume2 className="h-3 w-3 text-purple-400" />
+                    <div className="absolute bottom-2.5 right-2.5 bg-theme-bg/60 backdrop-blur-3xs text-3xs font-extrabold text-theme-fg px-2 py-0.5 rounded border border-theme-border flex items-center gap-1 z-10 pointer-events-none uppercase tracking-wider animate-pulse font-theme-body">
+                      <Volume2 className="h-3 w-3 text-theme-accent" />
                       Audio Active
                     </div>
                   )}
@@ -545,7 +545,7 @@ function BrowseCard({
                       e.stopPropagation();
                       setIsClicked(false);
                     }}
-                    className="absolute top-2.5 right-2.5 z-20 rounded-full border border-white/10 bg-black/60 hover:bg-black/90 p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+                    className="absolute top-2.5 right-2.5 z-20 rounded-full border border-theme-border bg-theme-bg/60 hover:bg-theme-bg/90 p-1.5 text-theme-fg/60 hover:text-theme-fg transition-colors cursor-pointer flex items-center justify-center"
                     title="Close Preview"
                   >
                     <span className="text-xs font-black px-1.5">✕</span>
@@ -553,29 +553,29 @@ function BrowseCard({
                 </div>
 
                 {/* Click details content panel */}
-                <div className="p-5 space-y-4">
+                <div className="p-5 space-y-4 font-theme-body">
                   {/* Title and metadata */}
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-2xs font-semibold text-zinc-300">
+                    <div className="flex items-center gap-2 text-2xs font-semibold text-theme-fg/60">
                       <span className="text-emerald-400">{matchPercentage}% Match</span>
                       <span>{movie.releaseYear}</span>
-                      <span className="px-1 border border-zinc-600 rounded text-4xs uppercase tracking-wider text-zinc-400 font-bold bg-black/10">PG-13</span>
+                      <span className="px-1 border border-theme-border rounded text-4xs uppercase tracking-wider text-theme-fg/50 font-bold bg-theme-panel/10">PG-13</span>
                       <span>{movie.runtime}m</span>
                     </div>
-                    <h4 className="text-md sm:text-lg md:text-xl font-black text-white leading-tight uppercase">
+                    <h4 className="text-md sm:text-lg md:text-xl font-black text-theme-fg leading-tight uppercase font-theme-head">
                       {movie.title}
                     </h4>
                   </div>
 
                   {/* Synopsis */}
-                  <p className="text-zinc-300 text-3xs sm:text-2xs md:text-xs leading-relaxed line-clamp-3">
+                  <p className="text-theme-fg/80 text-3xs sm:text-2xs md:text-xs leading-relaxed line-clamp-3">
                     {movie.overview}
                   </p>
 
                   {/* Cast and Director details */}
-                  <div className="text-4xs uppercase tracking-widest text-zinc-500 font-bold space-y-0.5 sm:space-y-1">
-                    <div>Director: <span className="text-zinc-300">{movie.director}</span></div>
-                    <div className="truncate">Cast: <span className="text-zinc-300">{movie.cast.slice(0, 3).join(', ')}</span></div>
+                  <div className="text-4xs uppercase tracking-widest text-theme-fg/55 font-bold space-y-0.5 sm:space-y-1">
+                    <div>Director: <span className="text-theme-fg/85">{movie.director}</span></div>
+                    <div className="truncate">Cast: <span className="text-theme-fg/85">{movie.cast.slice(0, 3).join(', ')}</span></div>
                   </div>
 
                   {/* Buttons and Genres Row */}
@@ -588,9 +588,9 @@ function BrowseCard({
                             onPlayTrailer(movie);
                             setIsClicked(false);
                           }}
-                          className="bg-white hover:bg-zinc-200 text-black font-bold px-3 py-1.5 rounded-lg text-3xs sm:text-2xs flex items-center gap-1 cursor-pointer transition-all duration-200 hover:scale-105"
+                          className="bg-theme-fg hover:bg-theme-fg/90 text-theme-bg font-bold px-3 py-1.5 rounded-theme-radius text-3xs sm:text-2xs flex items-center gap-1 cursor-pointer transition-all duration-200 hover:scale-105"
                         >
-                          <Play className="h-3 w-3 fill-black text-black ml-0.5" />
+                          <Play className="h-3 w-3 fill-current text-current ml-0.5" />
                           Full Trailer
                         </button>
                       )}
@@ -603,10 +603,10 @@ function BrowseCard({
                             onSaveToWatchlist(movie);
                           }
                         }}
-                        className={`rounded-lg p-2 cursor-pointer shadow border transition-all duration-200 hover:scale-110 flex items-center justify-center ${
+                        className={`rounded-theme-radius p-2 cursor-pointer shadow border transition-all duration-200 hover:scale-110 flex items-center justify-center ${
                           isSaved
-                            ? 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white'
-                            : 'bg-zinc-800 hover:bg-zinc-700 border-white/15 text-white'
+                            ? 'bg-theme-accent hover:bg-theme-accent-hover border-theme-accent text-theme-btn-text'
+                            : 'bg-theme-panel hover:bg-theme-card border-theme-border text-theme-fg'
                         }`}
                         title={isSaved ? 'Remove from Watchlist' : 'Add to Watchlist'}
                       >
@@ -618,7 +618,7 @@ function BrowseCard({
                           onSelectMovie(movie);
                           setIsClicked(false);
                         }}
-                        className="rounded-lg p-2 bg-zinc-800 hover:bg-zinc-700 border border-white/15 text-zinc-300 hover:text-white transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                        className="rounded-theme-radius p-2 bg-theme-panel hover:bg-theme-card border border-theme-border text-theme-fg/60 hover:text-theme-fg transition-all duration-200 hover:scale-110 flex items-center justify-center"
                         title="View Full Information & Reviews"
                       >
                         <Info className="h-3 w-3" />
@@ -630,7 +630,7 @@ function BrowseCard({
                       {movie.genres.slice(0, 2).map((g) => (
                         <span
                           key={g}
-                          className="text-4xs font-semibold text-zinc-400 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded"
+                          className="text-4xs font-semibold text-theme-fg/50 bg-theme-panel border border-theme-border px-1.5 py-0.5 rounded-theme-radius"
                         >
                           {g}
                         </span>

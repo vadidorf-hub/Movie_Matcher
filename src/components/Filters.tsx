@@ -48,16 +48,16 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
   };
 
   return (
-    <div className="w-full rounded-2xl glass-panel p-5 border border-white/5 shadow-xl flex flex-col gap-6">
+    <div className="w-full rounded-theme-radius glass-panel p-5 border border-theme-border shadow-xl flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+      <div className="flex items-center justify-between border-b border-theme-border pb-3">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-purple-400" />
-          <h3 className="font-bold text-zinc-200 text-sm uppercase tracking-wider">Match Filters</h3>
+          <Filter className="h-4 w-4 text-theme-accent" />
+          <h3 className="font-bold text-theme-fg text-sm uppercase tracking-wider font-theme-head">Match Filters</h3>
         </div>
         <button
           onClick={onReset}
-          className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors duration-250 cursor-pointer font-semibold"
+          className="flex items-center gap-1 text-xs text-theme-fg/60 hover:text-theme-fg transition-colors duration-250 cursor-pointer font-semibold font-theme-body"
         >
           <RotateCcw className="h-3 w-3" />
           Reset
@@ -65,8 +65,8 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
       </div>
 
       {/* Genres Grid */}
-      <div>
-        <span className="block text-xs font-bold text-zinc-400 mb-3 uppercase tracking-wider">
+      <div className="font-theme-body">
+        <span className="block text-xs font-bold text-theme-fg/50 mb-3 uppercase tracking-wider font-theme-head">
           Genres
         </span>
         <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1 amethyst-scrollbar">
@@ -76,10 +76,10 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
               <button
                 key={genre}
                 onClick={() => toggleGenre(genre)}
-                className={`text-xs px-3.5 py-1.5 rounded-full border transition-all duration-200 cursor-pointer font-semibold ${
+                className={`text-xs px-3.5 py-1.5 rounded-theme-radius border transition-all duration-200 cursor-pointer font-semibold ${
                   isSelected
-                    ? 'bg-purple-600/25 border-purple-500 text-white shadow-sm shadow-purple-500/10'
-                    : 'bg-zinc-900 border-white/5 text-zinc-400 hover:border-white/15 hover:text-zinc-200'
+                    ? 'bg-theme-accent/25 border-theme-accent text-theme-fg shadow-sm shadow-theme-accent/10'
+                    : 'bg-theme-panel border-theme-border text-theme-fg/60 hover:border-theme-border-hover hover:text-theme-fg'
                 }`}
               >
                 {genre}
@@ -90,9 +90,9 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
       </div>
 
       {/* Rating Range Slider */}
-      <div>
+      <div className="font-theme-body">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+          <span className="text-xs font-bold text-theme-fg/50 uppercase tracking-wider font-theme-head">
             Min IMDb Rating
           </span>
           <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
@@ -107,9 +107,9 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
           step="0.1"
           value={filters.minRating}
           onChange={handleRatingChange}
-          className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-purple-600 focus:outline-none"
+          className="w-full h-1.5 bg-theme-panel rounded-theme-radius border border-theme-border appearance-none cursor-pointer accent-theme-accent focus:outline-none"
         />
-        <div className="flex justify-between text-3xs text-zinc-500 mt-1 font-semibold">
+        <div className="flex justify-between text-3xs text-theme-fg/40 mt-1 font-semibold">
           <span>7.0</span>
           <span>8.0</span>
           <span>9.0</span>
@@ -117,8 +117,8 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
       </div>
 
       {/* Decades Selector */}
-      <div>
-        <span className="block text-xs font-bold text-zinc-400 mb-3 uppercase tracking-wider">
+      <div className="font-theme-body">
+        <span className="block text-xs font-bold text-theme-fg/50 mb-3 uppercase tracking-wider font-theme-head">
           Release Era
         </span>
         <div className="grid grid-cols-3 gap-2">
@@ -128,10 +128,10 @@ export default function Filters({ filters, onChange, onReset }: FiltersProps) {
               <button
                 key={d.value}
                 onClick={() => setDecade(d.value)}
-                className={`text-xs py-2 rounded-lg border text-center transition-all duration-200 cursor-pointer font-semibold ${
+                className={`text-xs py-2 rounded-theme-radius border text-center transition-all duration-200 cursor-pointer font-semibold ${
                   isSelected
-                    ? 'bg-purple-600/25 border-purple-500 text-white shadow-sm shadow-purple-500/10'
-                    : 'bg-zinc-900 border-white/5 text-zinc-400 hover:border-white/15 hover:text-zinc-200'
+                    ? 'bg-theme-accent/25 border-theme-accent text-theme-fg shadow-sm shadow-theme-accent/10'
+                    : 'bg-theme-panel border-theme-border text-theme-fg/60 hover:border-theme-border-hover hover:text-theme-fg'
                 }`}
               >
                 {d.label}
