@@ -102,6 +102,14 @@ export default function Home() {
     }
   }, []);
 
+  const cycleTheme = () => {
+    const currentIndex = themes.findIndex((t) => t.id === currentTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    const nextThemeId = themes[nextIndex].id;
+    setCurrentTheme(nextThemeId);
+    localStorage.setItem('theme', nextThemeId);
+  };
+
   // Fetch recommendations once watchlist length is 10 or more using our API endpoint
   useEffect(() => {
     const loadRecommendations = async () => {
@@ -393,11 +401,11 @@ export default function Home() {
     <div className={`theme-${currentTheme} h-screen bg-theme-bg text-theme-fg flex flex-col font-theme-body overflow-hidden selection:bg-theme-accent/30`}>
       
       {/* Sleek Navigation Header */}
-      <header className="h-[68px] flex-shrink-0 bg-theme-panel/95 border-b border-theme-border py-4 px-4 md:px-10 flex items-center justify-between z-30">
-        <div className="flex items-center gap-6 md:gap-10">
+      <header className="h-[68px] flex-shrink-0 bg-theme-panel/95 border-b border-theme-border py-4 px-3 sm:px-6 md:px-10 flex items-center justify-between z-30">
+        <div className="flex items-center gap-3 sm:gap-6 md:gap-10">
           {/* Logo with Dynamic Theme Gradient */}
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setActiveTab('swipe'); setSearchQuery(''); }}>
-            <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-theme-accent via-theme-secondary to-theme-tertiary bg-clip-text text-transparent select-none font-theme-head">
+            <h1 className="text-base sm:text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-theme-accent via-theme-secondary to-theme-tertiary bg-clip-text text-transparent select-none font-theme-head">
               MOVIE MATCHMAKER
             </h1>
           </div>
@@ -893,6 +901,15 @@ export default function Home() {
             </span>
           )}
           <span className="text-4xs font-bold uppercase tracking-wider">Watchlist</span>
+        </button>
+ 
+        <button
+          onClick={cycleTheme}
+          className="flex flex-col items-center gap-1 cursor-pointer transition-colors text-theme-fg/50 hover:text-theme-fg"
+          title={`Switch Theme (Current: ${themes.find(t => t.id === currentTheme)?.name})`}
+        >
+          <Palette className="h-5 w-5 text-theme-accent" />
+          <span className="text-4xs font-bold uppercase tracking-wider">Theme</span>
         </button>
  
         {activeTab === 'swipe' && (

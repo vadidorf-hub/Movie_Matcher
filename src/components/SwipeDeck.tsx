@@ -169,7 +169,7 @@ export default function SwipeDeck({
 
       {/* Keyboard Shortcuts Hint */}
       {activeMovie && (
-        <div className="flex items-center gap-1.5 justify-center mt-6 text-3xs text-theme-fg/40 font-medium select-none bg-theme-panel/30 px-3 py-1 rounded-theme-radius border border-theme-border">
+        <div className="hidden sm:flex items-center gap-1.5 justify-center mt-6 text-3xs text-theme-fg/40 font-medium select-none bg-theme-panel/30 px-3 py-1 rounded-theme-radius border border-theme-border">
           <Keyboard className="h-3 w-3 text-theme-fg/40" />
           <span>Use keyboard arrows to swipe • R to undo</span>
         </div>
