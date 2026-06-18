@@ -125,6 +125,10 @@ export async function fetchLivePopularMovies(page = 1, filters?: DiscoverFilters
           'Sci-Fi': 878,
           'Science Fiction': 878,
           'Thriller': 53,
+          'History': 36,
+          'War': 10752,
+          'Western': 37,
+          'Documentary': 99,
         };
         const genreIds = filters.genres
           .map((name) => genreMap[name])

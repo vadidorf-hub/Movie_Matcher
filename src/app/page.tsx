@@ -2,13 +2,17 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { Movie, SwipeDirection, FilterState } from '../types';
+import { Movie, SwipeDirection, FilterState, Room, RoomParticipant, RoomSwipe } from '../types';
 import SwipeDeck from '../components/SwipeDeck';
 import Filters from '../components/Filters';
 import Watchlist from '../components/Watchlist';
 import MovieDetailsModal from '../components/MovieDetailsModal';
 import RecommendationsModal from '../components/RecommendationsModal';
 import NetflixBrowse from '../components/NetflixBrowse';
+import RoomLobby from '../components/RoomLobby';
+import RoomFilters from '../components/RoomFilters';
+import { supabase } from '../services/supabase';
+import confetti from 'canvas-confetti';
 import { 
   Heart, 
   Filter, 
@@ -38,7 +42,7 @@ const initialFilters: FilterState = {
   decade: 'all',
 };
 
-type ActiveTab = 'swipe' | 'browse' | 'watchlist';
+type ActiveTab = 'swipe' | 'browse' | 'watchlist' | 'matches';
 
 const themes = [
   { id: 'amethyst', name: 'Classic Amethyst', primary: '#9d4edd', secondary: '#ff007f', bg: '#07050f' },
@@ -93,14 +97,376 @@ export default function Home() {
   const [currentTheme, setCurrentTheme] = useState<string>('amethyst');
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
 
-  // Set mounted on client
+  // Room Matcher State
+  const [roomCode, setRoomCode] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+  const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+  const [roomSwipes, setRoomSwipes] = useState<RoomSwipe[]>([]);
+  const [roomMatches, setRoomMatches] = useState<Movie[]>([]);
+  const [roomLobbyLoading, setRoomLobbyLoading] = useState<boolean>(false);
+  const [roomLobbyError, setRoomLobbyError] = useState<string | null>(null);
+  const [matchedMovieToShow, setMatchedMovieToShow] = useState<Movie | null>(null);
+  
+  const currentParticipant = currentRoom?.participants.find(p => p.name.toLowerCase() === username.toLowerCase());
+  const hasCompletedFilters = currentParticipant?.completedFilters || false;
+  const partnerParticipant = currentRoom?.participants.find(p => p.name.toLowerCase() !== username.toLowerCase());
+  const partnerCompletedFilters = partnerParticipant?.completedFilters || false;
+
+  // Helper to shuffle array
+  const shuffleArray = <T,>(arr: T[]): T[] => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
+  const roomMatchesRef = useRef<Movie[]>([]);
+  useEffect(() => {
+    roomMatchesRef.current = roomMatches;
+  }, [roomMatches]);
+
+  // Fetch swipes and matches
+  const fetchRoomSwipesAndMatches = async (code: string, currentUsername: string, previousMatches?: Movie[]) => {
+    try {
+      const { data: swipes, error } = await supabase
+        .from('room_swipes')
+        .select('*')
+        .eq('room_code', code);
+
+      if (error) throw error;
+
+      if (swipes) {
+        setRoomSwipes(swipes);
+        
+        // Compute matches (liked by 2 different users)
+        const movieLikes = swipes.filter((s: any) => s.direction === 'like');
+        const likesByMovie: { [movieId: string]: string[] } = {};
+        const movieDataMap: { [movieId: string]: any } = {};
+
+        movieLikes.forEach((s: any) => {
+          if (!likesByMovie[s.movie_id]) {
+            likesByMovie[s.movie_id] = [];
+          }
+          if (!likesByMovie[s.movie_id].includes(s.username)) {
+            likesByMovie[s.movie_id].push(s.username);
+          }
+          movieDataMap[s.movie_id] = s.movie_data;
+        });
+
+        const matchedMovieIds = Object.keys(likesByMovie).filter(
+          id => likesByMovie[id].length >= 2
+        );
+
+        const matches = matchedMovieIds.map(id => movieDataMap[id] as Movie);
+        
+        // Check for new match to trigger confetti and modal
+        const currentPrev = previousMatches || roomMatchesRef.current;
+        if (currentPrev && matches.length > currentPrev.length) {
+          const newMatches = matches.filter(
+            m => !currentPrev.some(pm => pm.id === m.id)
+          );
+          if (newMatches.length > 0) {
+            confetti({
+              particleCount: 125,
+              spread: 80,
+              origin: { y: 0.6 }
+            });
+            setMatchedMovieToShow(newMatches[0]);
+          }
+        }
+        
+        setRoomMatches(matches);
+      }
+    } catch (err) {
+      console.error('Error fetching room swipes:', err);
+    }
+  };
+
+  // Join Room
+  const handleJoinRoom = async (code: string, name: string) => {
+    setRoomLobbyLoading(true);
+    setRoomLobbyError(null);
+    try {
+      const { data: rooms, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('room_code', code);
+      
+      if (error) throw error;
+      
+      if (!rooms || rooms.length === 0) {
+        setRoomLobbyError('Room not found. Please check the code or create a new room.');
+        return;
+      }
+      
+      const room = rooms[0];
+      const participants: RoomParticipant[] = room.participants || [];
+      
+      const nameLower = name.toLowerCase();
+      const existingUser = participants.find(p => p.name.toLowerCase() === nameLower);
+      
+      let updatedParticipants = [...participants];
+      if (!existingUser) {
+        if (participants.length >= 2) {
+          setRoomLobbyError('This room is full (max 2 participants).');
+          return;
+        }
+        updatedParticipants.push({
+          name,
+          genres: [],
+          completedFilters: false
+        });
+        
+        const { error: updateError } = await supabase
+          .from('rooms')
+          .update({ participants: updatedParticipants })
+          .eq('room_code', code);
+          
+        if (updateError) throw updateError;
+      }
+      
+      setRoomCode(code);
+      setUsername(name);
+      localStorage.setItem('room_code', code);
+      localStorage.setItem('room_username', name);
+      
+      setCurrentRoom({
+        roomCode: room.room_code,
+        createdAt: room.created_at,
+        participants: updatedParticipants
+      });
+      
+      await fetchRoomSwipesAndMatches(code, name);
+      
+    } catch (err: any) {
+      console.error('Join room error:', err);
+      setRoomLobbyError(err.message || 'An error occurred while joining the room.');
+    } finally {
+      setRoomLobbyLoading(false);
+    }
+  };
+
+  // Create Room
+  const handleCreateRoom = async (code: string, name: string) => {
+    setRoomLobbyLoading(true);
+    setRoomLobbyError(null);
+    try {
+      const { data: existing, error: fetchError } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('room_code', code);
+        
+      if (fetchError) throw fetchError;
+      
+      if (existing && existing.length > 0) {
+        setRoomLobbyError('Room already exists with this code. Try joining it instead!');
+        return;
+      }
+      
+      const newParticipant: RoomParticipant = {
+        name,
+        genres: [],
+        completedFilters: false
+      };
+      
+      const { error: insertError } = await supabase
+        .from('rooms')
+        .insert({
+          room_code: code,
+          participants: [newParticipant]
+        });
+        
+      if (insertError) throw insertError;
+      
+      setRoomCode(code);
+      setUsername(name);
+      localStorage.setItem('room_code', code);
+      localStorage.setItem('room_username', name);
+      
+      setCurrentRoom({
+        roomCode: code,
+        createdAt: new Date().toISOString(),
+        participants: [newParticipant]
+      });
+      
+      setRoomSwipes([]);
+      setRoomMatches([]);
+      
+    } catch (err: any) {
+      console.error('Create room error:', err);
+      setRoomLobbyError(err.message || 'An error occurred while creating the room.');
+    } finally {
+      setRoomLobbyLoading(false);
+    }
+  };
+
+  // Leave Room
+  const handleLeaveRoom = () => {
+    setRoomCode('');
+    setUsername('');
+    setCurrentRoom(null);
+    setRoomSwipes([]);
+    setRoomMatches([]);
+    localStorage.removeItem('room_code');
+    localStorage.removeItem('room_username');
+  };
+
+  // Submit filters
+  const handleRoomFiltersSubmit = async (genres: string[]) => {
+    if (!currentRoom || !username) return;
+    
+    setRoomLobbyLoading(true);
+    try {
+      const updatedParticipants = currentRoom.participants.map(p => {
+        if (p.name.toLowerCase() === username.toLowerCase()) {
+          return {
+            ...p,
+            genres,
+            completedFilters: true
+          };
+        }
+        return p;
+      });
+      
+      const { error } = await supabase
+        .from('rooms')
+        .update({ participants: updatedParticipants })
+        .eq('room_code', currentRoom.roomCode);
+        
+      if (error) throw error;
+      
+      setCurrentRoom({
+        ...currentRoom,
+        participants: updatedParticipants
+      });
+      
+    } catch (err: any) {
+      console.error('Error submitting filters:', err);
+      alert(err.message || 'Failed to save filters.');
+    } finally {
+      setRoomLobbyLoading(false);
+    }
+  };
+
+  // Fetch randomized movie pool for room
+  const fetchRandomRoomMovies = async (genresList: string[]) => {
+    setIsLoading(true);
+    setPage(1);
+    setConsecutiveEmptyFetches(0);
+    try {
+      const p1 = Math.floor(Math.random() * 8) + 1;
+      const p2 = Math.floor(Math.random() * 8) + 1;
+      const pages = p1 === p2 ? [p1] : [p1, p2];
+
+      const moviePromises = pages.map(async (p) => {
+        const queryParams = new URLSearchParams({
+          page: p.toString(),
+          minRating: '7.0',
+          decade: 'all',
+        });
+        if (genresList.length > 0) {
+          queryParams.append('genres', genresList.join(','));
+        }
+        const res = await fetch(`/api/movies/popular?${queryParams.toString()}`);
+        if (!res.ok) return [];
+        return await res.json() as Movie[];
+      });
+
+      const results = await Promise.all(moviePromises);
+      const combined = results.flat();
+
+      const uniqueMap = new Map<string, Movie>();
+      combined.forEach(m => {
+        if (m && m.id) uniqueMap.set(m.id, m);
+      });
+
+      const userSwipedIds = roomSwipes
+        .filter(s => s.username.toLowerCase() === username.toLowerCase())
+        .map(s => s.movie_id);
+
+      let pool = Array.from(uniqueMap.values()).filter(m => !userSwipedIds.includes(m.id));
+
+      pool = shuffleArray(pool);
+
+      setLiveMovies(pool);
+    } catch (error) {
+      console.error('Failed to load random room movies:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Set mounted on client and load saved room state
   useEffect(() => {
     setIsMounted(true);
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
       setCurrentTheme(savedTheme);
     }
+
+    const savedRoomCode = localStorage.getItem('room_code');
+    const savedUsername = localStorage.getItem('room_username');
+    if (savedRoomCode && savedUsername) {
+      handleJoinRoom(savedRoomCode, savedUsername);
+    } else {
+      setIsLoading(false); // If no room to load, stop loading spinner
+    }
   }, []);
+
+  // Realtime Supabase Subscription for rooms & swipes
+  useEffect(() => {
+    if (!roomCode || !username) return;
+
+    // Sub to room swipes changes
+    const swipeChannel = supabase
+      .channel(`room_swipes_realtime:${roomCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'room_swipes',
+          filter: `room_code=eq.${roomCode}`,
+        },
+        (payload) => {
+          const newSwipe = payload.new as any;
+          // Trigger matches check
+          fetchRoomSwipesAndMatches(roomCode, username, roomMatches);
+        }
+      )
+      .subscribe();
+
+    // Sub to room participants changes
+    const roomChannel = supabase
+      .channel(`room_realtime:${roomCode}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'rooms',
+          filter: `room_code=eq.${roomCode}`,
+        },
+        (payload) => {
+          const updatedRoom = payload.new as any;
+          if (updatedRoom) {
+            setCurrentRoom({
+              roomCode: updatedRoom.room_code,
+              createdAt: updatedRoom.created_at,
+              participants: updatedRoom.participants,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(swipeChannel);
+      supabase.removeChannel(roomChannel);
+    };
+  }, [roomCode, username, roomMatches]);
 
   const cycleTheme = () => {
     const currentIndex = themes.findIndex((t) => t.id === currentTheme);
@@ -148,9 +514,23 @@ export default function Home() {
     }
   }, [watchlist.length, recommendations.length, hasShownRecommendationsModal, isMounted]);
 
+  const mergedGenres = useMemo(() => {
+    if (!currentRoom) return [];
+    const uGenres = currentParticipant?.genres || [];
+    const pGenres = partnerParticipant?.genres || [];
+    return Array.from(new Set([...uGenres, ...pGenres]));
+  }, [currentRoom, currentParticipant, partnerParticipant]);
+
   // Whenever filters change, reset deck, page, and load page 1 for the new filters
   useEffect(() => {
     if (!isMounted) return;
+    
+    if (roomCode) {
+      if (hasCompletedFilters) {
+        fetchRandomRoomMovies(mergedGenres);
+      }
+      return;
+    }
     
     const loadFilteredMovies = async () => {
       setIsLoading(true);
@@ -179,7 +559,7 @@ export default function Home() {
     };
 
     loadFilteredMovies();
-  }, [filters, isMounted]);
+  }, [filters, isMounted, roomCode, hasCompletedFilters, mergedGenres]);
 
   // Handle Search Input Debouncing & Fetching
   useEffect(() => {
@@ -205,8 +585,14 @@ export default function Home() {
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
-  // Calculate deck size and movies remaining based on swiped items and active filters
   const filteredDeck = useMemo(() => {
+    if (roomCode) {
+      const userSwipedIds = roomSwipes
+        .filter((s) => s.username.toLowerCase() === username.toLowerCase())
+        .map((s) => s.movie_id);
+      return liveMovies.filter((movie) => !userSwipedIds.includes(movie.id));
+    }
+
     return liveMovies.filter((movie) => {
       const isSwiped = history.some((h) => h.movie.id === movie.id);
       if (isSwiped) return false;
@@ -231,10 +617,65 @@ export default function Home() {
 
       return true;
     });
-  }, [liveMovies, history, filters]);
+  }, [liveMovies, history, filters, roomCode, roomSwipes, username]);
 
   // Infinite Scroll Deck Loading
   useEffect(() => {
+    if (roomCode) {
+      if (!hasCompletedFilters) return;
+      const loadMoreRoomMovies = async () => {
+        if (
+          isMounted &&
+          !isLoading &&
+          !fetchingNextPage &&
+          filteredDeck.length < 5 &&
+          !searchQuery
+        ) {
+          setFetchingNextPage(true);
+          try {
+            const nextPage = Math.floor(Math.random() * 10) + 1;
+            const queryParams = new URLSearchParams({
+              page: nextPage.toString(),
+              minRating: '7.0',
+              decade: 'all',
+            });
+            if (mergedGenres.length > 0) {
+              queryParams.append('genres', mergedGenres.join(','));
+            }
+            
+            const res = await fetch(`/api/movies/popular?${queryParams.toString()}`);
+            if (!res.ok) throw new Error('Failed to fetch next page');
+            const nextPageMovies = await res.json() as Movie[];
+
+            const userSwipedIds = roomSwipes
+              .filter(s => s.username.toLowerCase() === username.toLowerCase())
+              .map(s => s.movie_id);
+
+            const existingIds = liveMovies.map((m) => m.id);
+            const newMatching = nextPageMovies.filter((movie: Movie) => {
+              if (existingIds.includes(movie.id)) return false;
+              if (userSwipedIds.includes(movie.id)) return false;
+              return true;
+            });
+
+            const shuffledNewMatching = shuffleArray(newMatching);
+
+            setLiveMovies((prev) => {
+              const currentIds = prev.map((m) => m.id);
+              const uniques = shuffledNewMatching.filter((m) => !currentIds.includes(m.id));
+              return [...uniques, ...prev];
+            });
+          } catch (error) {
+            console.error('Failed to load more room movies:', error);
+          } finally {
+            setFetchingNextPage(false);
+          }
+        }
+      };
+      loadMoreRoomMovies();
+      return;
+    }
+
     const loadNextPage = async () => {
       if (
         isMounted &&
@@ -313,14 +754,59 @@ export default function Home() {
     filters,
     consecutiveEmptyFetches,
     searchQuery,
+    roomCode,
+    hasCompletedFilters,
+    mergedGenres,
+    roomSwipes,
+    username
   ]);
 
   const handleSwipe = async (direction: SwipeDirection, movie: Movie) => {
-    await addSwipeToHistory(movie, direction);
+    if (roomCode) {
+      try {
+        const swipeDir = direction === 'right' || direction === 'up' ? 'like' : 'dislike';
+        const { error } = await supabase.from('room_swipes').insert({
+          room_code: roomCode,
+          username: username,
+          movie_id: movie.id,
+          movie_title: movie.title,
+          movie_data: movie,
+          direction: swipeDir,
+        });
+
+        if (error) throw error;
+        await fetchRoomSwipesAndMatches(roomCode, username, roomMatches);
+      } catch (err) {
+        console.error('Error swiping in room:', err);
+      }
+    } else {
+      await addSwipeToHistory(movie, direction);
+    }
   };
 
   const handleUndo = async () => {
-    await undoLastSwipe();
+    if (roomCode) {
+      try {
+        const userSwipes = roomSwipes
+          .filter((s) => s.username.toLowerCase() === username.toLowerCase())
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        if (userSwipes.length === 0) return;
+        const lastSwipe = userSwipes[0];
+
+        const { error } = await supabase
+          .from('room_swipes')
+          .delete()
+          .eq('id', lastSwipe.id);
+
+        if (error) throw error;
+        await fetchRoomSwipesAndMatches(roomCode, username);
+      } catch (err) {
+        console.error('Error undoing room swipe:', err);
+      }
+    } else {
+      await undoLastSwipe();
+    }
   };
 
   const handleSaveRecommendation = async (movie: Movie) => {
@@ -333,6 +819,28 @@ export default function Home() {
   };
 
   const handleStartOver = async () => {
+    if (roomCode) {
+      if (window.confirm('Delete all your swipes in this room and start over?')) {
+        setIsLoading(true);
+        try {
+          const { error } = await supabase
+            .from('room_swipes')
+            .delete()
+            .eq('room_code', roomCode)
+            .eq('username', username);
+
+          if (error) throw error;
+          await fetchRoomSwipesAndMatches(roomCode, username);
+          await fetchRandomRoomMovies(mergedGenres);
+        } catch (err) {
+          console.error('Error resetting room swipes:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      return;
+    }
+
     if (window.confirm('Reset local progress and start over? This clears your watchlist and swiped history.')) {
       setIsLoading(true);
       await resetUserData();
@@ -422,6 +930,23 @@ export default function Home() {
             >
               Swipe Match
             </button>
+            {roomCode && (
+              <button
+                onClick={() => { setActiveTab('matches'); setSearchQuery(''); }}
+                className={`text-sm font-semibold transition-all duration-200 cursor-pointer ${
+                  activeTab === 'matches' && !searchQuery
+                    ? 'bg-theme-card px-3.5 py-1.5 rounded-theme-radius text-theme-fg border border-theme-border shadow-md'
+                    : 'text-theme-fg/60 hover:text-theme-fg px-1 py-1'
+                }`}
+              >
+                Room Matches
+                {roomMatches.length > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-theme-secondary text-theme-btn-text text-4xs font-black">
+                    {roomMatches.length}
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={() => { setActiveTab('browse'); setSearchQuery(''); }}
               className={`text-sm font-semibold transition-all duration-200 cursor-pointer ${
@@ -452,6 +977,25 @@ export default function Home() {
 
         {/* Right Header Panel Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
+          {/* Room status tag and Exit Room button */}
+          {roomCode && (
+            <>
+              <div className="hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-theme-radius bg-theme-card border border-theme-border text-xs">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-theme-fg/60 font-medium">Room:</span>
+                <span className="font-mono font-bold text-theme-accent">{roomCode}</span>
+              </div>
+              <button
+                onClick={handleLeaveRoom}
+                className="hidden sm:flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors border border-red-500/20 hover:border-red-500/40 rounded-theme-radius px-3 py-1.5 bg-red-500/5 cursor-pointer font-semibold"
+                title="Exit Room"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Exit Room</span>
+              </button>
+            </>
+          )}
+
           {/* Animated Search Bar */}
           <div className="relative flex items-center">
             <motion.div
@@ -589,8 +1133,29 @@ export default function Home() {
       {/* Main App Container */}
       <div className="flex-1 flex w-full mx-auto overflow-hidden relative h-[calc(100vh-68px)]">
         
-        {/* Render Search Results Grid Overlay if query is active */}
-        {searchQuery.trim() !== '' ? (
+        {!roomCode ? (
+          /* 1. Room Lobby View */
+          <div className="flex-grow flex items-center justify-center p-4 md:p-6 h-full bg-theme-bg overflow-y-auto amethyst-scrollbar pb-24">
+            <RoomLobby
+              onJoin={handleJoinRoom}
+              onCreate={handleCreateRoom}
+              loading={roomLobbyLoading}
+              error={roomLobbyError}
+              setError={setRoomLobbyError}
+            />
+          </div>
+        ) : !hasCompletedFilters ? (
+          /* 2. Room Filters View */
+          <div className="flex-grow flex items-center justify-center p-4 md:p-6 h-full bg-theme-bg overflow-y-auto amethyst-scrollbar pb-24">
+            <RoomFilters
+              nickname={username}
+              roomCode={roomCode}
+              onSubmit={handleRoomFiltersSubmit}
+              loading={roomLobbyLoading}
+            />
+          </div>
+        ) : searchQuery.trim() !== '' ? (
+          /* Search Results Overlay */
           <div className="w-full px-4 md:px-10 py-6 overflow-y-auto h-full amethyst-scrollbar bg-theme-bg text-theme-fg pb-24">
             <h3 className="text-lg md:text-xl font-black text-theme-fg/60 mb-6 uppercase tracking-tight font-theme-head">
               Search Results for <span className="text-theme-fg italic font-bold">"{searchQuery}"</span>
@@ -652,13 +1217,90 @@ export default function Home() {
             {/* 1. Swipe Mode (Home) */}
             {activeTab === 'swipe' && (
               <div className="flex-grow flex overflow-hidden h-full">
-                {/* Desktop Left Sidebar: Filters */}
+                {/* Desktop Left Sidebar: Room details or Filters */}
                 <aside className="hidden md:block w-76 p-6 flex-shrink-0 border-r border-theme-border overflow-y-auto h-full bg-theme-bg">
-                  <Filters
-                    filters={filters}
-                    onChange={setFilters}
-                    onReset={handleResetFilters}
-                  />
+                  {roomCode ? (
+                    <div className="w-full rounded-theme-radius glass-panel p-5 border border-theme-border shadow-xl flex flex-col gap-6 font-theme-body">
+                      <div className="border-b border-theme-border pb-3">
+                        <span className="text-3xs font-extrabold text-theme-accent uppercase tracking-wider font-theme-head">Session Room</span>
+                        <div className="text-lg font-black text-theme-fg font-mono tracking-widest mt-1">{roomCode}</div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <span className="text-xs font-bold text-theme-fg/80 font-theme-head">{username} (You)</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {currentParticipant?.genres.map(g => (
+                              <span key={g} className="text-4xs px-2 py-0.5 rounded bg-theme-accent/10 border border-theme-accent/20 text-theme-accent font-semibold">{g}</span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 border-t border-theme-border/30 pt-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`h-2 w-2 rounded-full ${partnerParticipant ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                            <span className="text-xs font-bold text-theme-fg/80 font-theme-head">
+                              {partnerParticipant?.name || 'Partner (Waiting...)'}
+                            </span>
+                          </div>
+                          {partnerParticipant ? (
+                            partnerParticipant.completedFilters ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {partnerParticipant.genres.map(g => (
+                                  <span key={g} className="text-4xs px-2 py-0.5 rounded bg-theme-secondary/10 border border-theme-secondary/20 text-theme-secondary font-semibold">{g}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-4xs text-theme-fg/40 font-semibold italic">Selecting categories...</span>
+                            )
+                          ) : (
+                            <span className="text-4xs text-theme-fg/40 font-semibold italic">Share code {roomCode} with your partner to join!</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-theme-border pt-4 mt-2">
+                        <button
+                          onClick={async () => {
+                            if (!currentRoom) return;
+                            if (window.confirm('Change your movie categories? This will let you choose genres again.')) {
+                              setRoomLobbyLoading(true);
+                              try {
+                                const updatedParticipants = currentRoom.participants.map(p => {
+                                  if (p.name.toLowerCase() === username.toLowerCase()) {
+                                    return { ...p, completedFilters: false };
+                                  }
+                                  return p;
+                                });
+                                const { error: updateErr } = await supabase
+                                  .from('rooms')
+                                  .update({ participants: updatedParticipants })
+                                  .eq('room_code', roomCode);
+                                if (updateErr) throw updateErr;
+                                setCurrentRoom({ ...currentRoom, participants: updatedParticipants });
+                              } catch (err) {
+                                console.error(err);
+                              } finally {
+                                setRoomLobbyLoading(false);
+                              }
+                            }
+                          }}
+                          className="w-full text-center py-2 border border-theme-border hover:border-theme-accent rounded-theme-radius text-xs text-theme-fg/60 hover:text-theme-accent transition-colors font-bold cursor-pointer bg-theme-panel"
+                        >
+                          Change Genres
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Filters
+                      filters={filters}
+                      onChange={setFilters}
+                      onReset={handleResetFilters}
+                    />
+                  )}
                 </aside>
 
                 {/* Center Swiping Deck Viewport */}
@@ -667,21 +1309,68 @@ export default function Home() {
                     movies={filteredDeck}
                     onSwipe={handleSwipe}
                     onUndo={handleUndo}
-                    canUndo={history.length > 0}
+                    canUndo={roomCode ? roomSwipes.some(s => s.username.toLowerCase() === username.toLowerCase()) : history.length > 0}
                     onResetDeck={handleStartOver}
                   />
                 </main>
 
-                {/* Desktop Right Sidebar: Watchlist */}
+                {/* Desktop Right Sidebar: Watchlist or Room Matches */}
                 <aside className="hidden lg:block w-80 flex-shrink-0 border-l border-theme-border h-full bg-theme-bg">
-                  <Watchlist
-                    watchlist={watchlist}
-                    onRemove={handleRemoveFromWatchlist}
-                    onSelectMovie={setSelectedMovie}
-                    recommendations={recommendations}
-                    onSaveRecommendation={handleSaveRecommendation}
-                    onStartOver={handleStartOver}
-                  />
+                  {roomCode ? (
+                    <div className="w-full h-full p-5 flex flex-col gap-6 font-theme-body overflow-y-auto amethyst-scrollbar">
+                      <div className="flex items-center gap-2 border-b border-theme-border pb-3">
+                        <Sparkles className="h-4.5 w-4.5 text-theme-accent animate-pulse" />
+                        <h3 className="font-bold text-theme-fg text-sm uppercase tracking-wider font-theme-head">Room Matches ({roomMatches.length})</h3>
+                      </div>
+                      
+                      {roomMatches.length === 0 ? (
+                        <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-theme-fg/40 select-none">
+                          <Film className="h-8 w-8 mb-2 opacity-30 animate-pulse" />
+                          <p className="text-xs font-semibold">No matches yet</p>
+                          <p className="text-4xs mt-0.5 leading-relaxed">Swipe right on the same films to match!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 pb-20">
+                          {roomMatches.map((movie) => (
+                            <div
+                              key={`sidebar-match-${movie.id}`}
+                              onClick={() => setSelectedMovie(movie)}
+                              className="group relative flex gap-3 p-2.5 rounded-theme-radius border border-theme-border bg-theme-card/45 hover:bg-theme-card transition-all duration-200 cursor-pointer"
+                            >
+                              <div className="relative h-16 w-11 flex-shrink-0 overflow-hidden rounded-[calc(var(--border-radius)*0.75)] bg-theme-panel">
+                                <Image
+                                  src={movie.posterUrl}
+                                  alt={movie.title}
+                                  fill
+                                  sizes="44px"
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div className="flex-grow min-w-0 font-theme-body pr-2">
+                                <h4 className="text-xs font-bold text-theme-fg group-hover:text-theme-accent transition-colors truncate uppercase font-theme-head">
+                                  {movie.title}
+                                </h4>
+                                <div className="flex items-center gap-1.5 mt-1 text-4xs font-bold text-theme-fg/60">
+                                  <span className="text-amber-500">{movie.rating.toFixed(1)} IMDb</span>
+                                  <span>•</span>
+                                  <span>{movie.releaseYear}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Watchlist
+                      watchlist={watchlist}
+                      onRemove={handleRemoveFromWatchlist}
+                      onSelectMovie={setSelectedMovie}
+                      recommendations={recommendations}
+                      onSaveRecommendation={handleSaveRecommendation}
+                      onStartOver={handleStartOver}
+                    />
+                  )}
                 </aside>
               </div>
             )}
@@ -835,11 +1524,83 @@ export default function Home() {
                 )}
               </div>
             )}
+
+            {/* 4. Dedicated Room Matches View */}
+            {activeTab === 'matches' && roomCode && (
+              <div className="w-full h-full overflow-hidden flex flex-col bg-theme-bg">
+                <div className="flex-1 p-6 overflow-y-auto h-full amethyst-scrollbar pb-24">
+                  <div className="flex items-center justify-between border-b border-theme-border pb-4 mb-6">
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-black text-theme-fg uppercase tracking-tight flex items-center gap-2 font-theme-head">
+                        <Sparkles className="h-5.5 w-5.5 text-theme-accent fill-theme-accent animate-pulse" />
+                        Room Matches ({roomMatches.length})
+                      </h2>
+                      <p className="text-xs text-theme-fg/50 font-semibold uppercase tracking-wider mt-1">
+                        Films that both {username} and {partnerParticipant?.name || 'your partner'} swiped right on!
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleStartOver}
+                      className="text-xs bg-theme-panel border border-theme-border hover:border-theme-border-hover text-theme-fg/60 hover:text-theme-accent py-2 px-4 rounded-theme-radius transition-colors cursor-pointer"
+                    >
+                      Reset swipes
+                    </button>
+                  </div>
+
+                  {roomMatches.length === 0 ? (
+                    <div className="py-24 text-center select-none font-theme-body">
+                      <Film className="h-12 w-12 mx-auto text-theme-fg/20 mb-4 animate-pulse" />
+                      <h3 className="text-lg font-bold text-theme-fg/80 font-theme-head">No Matches Yet</h3>
+                      <p className="text-xs text-theme-fg/40 mt-1 max-w-xs mx-auto leading-relaxed">
+                        Keep swiping! When both of you swipe right on the same movie, it will show up here.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('swipe')}
+                        className="mt-6 px-6 py-2.5 rounded-theme-radius bg-theme-accent text-theme-btn-text text-xs font-bold hover:bg-theme-accent-hover transition-colors shadow-lg"
+                      >
+                        Start Swiping
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6 font-theme-body">
+                      {roomMatches.map((movie) => (
+                        <div
+                          key={`room-match-tab-${movie.id}`}
+                          onClick={() => setSelectedMovie(movie)}
+                          className="group relative rounded-theme-radius overflow-hidden border border-theme-border bg-theme-card shadow-md hover:border-theme-border-hover transition-all duration-300 hover:scale-105 cursor-pointer"
+                        >
+                          <div className="relative aspect-[2/3] w-full">
+                            <Image
+                              src={movie.posterUrl}
+                              alt={movie.title}
+                              fill
+                              className="object-cover"
+                            />
+                            {/* Score Overlay */}
+                            <div className="absolute top-2 left-2 bg-theme-panel/60 backdrop-blur-3xs text-3xs font-extrabold text-theme-fg px-2 py-0.5 rounded border border-theme-border flex items-center gap-0.5">
+                              <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                              {movie.rating.toFixed(1)}
+                            </div>
+                          </div>
+                          <div className="p-3 bg-theme-panel">
+                            <h4 className="text-xs font-bold text-theme-fg leading-tight truncate uppercase font-theme-head">
+                              {movie.title}
+                            </h4>
+                            <p className="text-4xs text-theme-fg/50 font-semibold pt-0.5">{movie.releaseYear} • {movie.runtime}m</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
- 
+
         {/* Mobile Slide-in Filters Modal */}
-        {isMobileFiltersOpen && (
+        {isMobileFiltersOpen && !roomCode && (
           <div className="fixed inset-0 z-45 md:hidden flex flex-col justify-start pt-20 p-6 bg-theme-bg/95 backdrop-blur-md animate-in fade-in duration-200">
             <div className="absolute top-4 right-4">
               <button
@@ -865,7 +1626,7 @@ export default function Home() {
           </div>
         )}
       </div>
- 
+
       {/* Responsive Mobile Bottom Navigation Bar */}
       <footer className="fixed bottom-0 left-0 right-0 h-16 bg-theme-panel/95 border-t border-theme-border flex items-center justify-around z-40 md:hidden backdrop-blur-md font-theme-body">
         <button
@@ -877,7 +1638,7 @@ export default function Home() {
           <Film className="h-5 w-5" />
           <span className="text-4xs font-bold uppercase tracking-wider">Swipe Match</span>
         </button>
- 
+
         <button
           onClick={() => { setActiveTab('browse'); setSearchQuery(''); }}
           className={`flex flex-col items-center gap-1 cursor-pointer transition-colors ${
@@ -887,22 +1648,39 @@ export default function Home() {
           <Compass className="h-5 w-5" />
           <span className="text-4xs font-bold uppercase tracking-wider">Browse</span>
         </button>
- 
-        <button
-          onClick={() => { setActiveTab('watchlist'); setSearchQuery(''); }}
-          className={`flex flex-col items-center gap-1 cursor-pointer relative transition-colors ${
-            activeTab === 'watchlist' && !searchQuery ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
-          }`}
-        >
-          <Heart className="h-5 w-5" />
-          {watchlist.length > 0 && (
-            <span className="absolute -top-1.5 -right-2 bg-theme-accent text-theme-btn-text text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center animate-scale-in">
-              {watchlist.length}
-            </span>
-          )}
-          <span className="text-4xs font-bold uppercase tracking-wider">Watchlist</span>
-        </button>
- 
+
+        {roomCode ? (
+          <button
+            onClick={() => { setActiveTab('matches'); setSearchQuery(''); }}
+            className={`flex flex-col items-center gap-1 cursor-pointer relative transition-colors ${
+              activeTab === 'matches' && !searchQuery ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
+            }`}
+          >
+            <Sparkles className="h-5 w-5" />
+            {roomMatches.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-theme-secondary text-theme-btn-text text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center animate-scale-in">
+                {roomMatches.length}
+              </span>
+            )}
+            <span className="text-4xs font-bold uppercase tracking-wider">Matches</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => { setActiveTab('watchlist'); setSearchQuery(''); }}
+            className={`flex flex-col items-center gap-1 cursor-pointer relative transition-colors ${
+              activeTab === 'watchlist' && !searchQuery ? 'text-theme-accent font-bold font-theme-head' : 'text-theme-fg/50 hover:text-theme-fg'
+            }`}
+          >
+            <Heart className="h-5 w-5" />
+            {watchlist.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-theme-accent text-theme-btn-text text-4xs font-black h-4 w-4 rounded-full flex items-center justify-center animate-scale-in">
+                {watchlist.length}
+              </span>
+            )}
+            <span className="text-4xs font-bold uppercase tracking-wider">Watchlist</span>
+          </button>
+        )}
+
         <button
           onClick={cycleTheme}
           className="flex flex-col items-center gap-1 cursor-pointer transition-colors text-theme-fg/50 hover:text-theme-fg"
@@ -911,8 +1689,8 @@ export default function Home() {
           <Palette className="h-5 w-5 text-theme-accent" />
           <span className="text-4xs font-bold uppercase tracking-wider">Theme</span>
         </button>
- 
-        {activeTab === 'swipe' && (
+
+        {activeTab === 'swipe' && !roomCode && (
           <button
             onClick={() => setIsMobileFiltersOpen(true)}
             className={`flex flex-col items-center gap-1 cursor-pointer relative transition-colors ${
@@ -973,6 +1751,86 @@ export default function Home() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
+
+      {/* Real-time Match Celebration Modal */}
+      <AnimatePresence>
+        {matchedMovieToShow && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md p-6 rounded-theme-radius bg-theme-panel border border-theme-accent shadow-2xl text-center space-y-6 overflow-hidden font-theme-body"
+            >
+              {/* Confetti Glow Background */}
+              <div className="absolute -inset-10 bg-gradient-to-tr from-theme-accent/20 to-theme-secondary/20 blur-3xl pointer-events-none" />
+
+              <div className="space-y-2 relative">
+                <span className="text-4xs font-black bg-gradient-to-r from-theme-accent to-theme-secondary text-theme-btn-text px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">
+                  It's a Match! 🎉
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-theme-fg uppercase tracking-tight pt-1 font-theme-head">
+                  You both matched!
+                </h3>
+                <p className="text-xs text-theme-fg/60 max-w-xs mx-auto">
+                  You and {partnerParticipant?.name || 'your partner'} both want to watch this film!
+                </p>
+              </div>
+
+              {/* Movie Poster & Details */}
+              <div className="relative aspect-[2/3] w-48 mx-auto rounded-theme-radius overflow-hidden border border-theme-border shadow-lg animate-bounce">
+                <Image
+                  src={matchedMovieToShow.posterUrl}
+                  alt={matchedMovieToShow.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-theme-fg uppercase font-theme-head truncate">
+                  {matchedMovieToShow.title}
+                </h4>
+                <div className="flex items-center justify-center gap-2 text-xs text-theme-fg/50 font-medium">
+                  <span>{matchedMovieToShow.releaseYear}</span>
+                  <span>•</span>
+                  <span>{matchedMovieToShow.runtime}m</span>
+                  <span>•</span>
+                  <span className="text-amber-500 font-bold flex items-center gap-0.5">
+                    ★ {matchedMovieToShow.rating.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 relative">
+                {matchedMovieToShow.trailerUrl && (
+                  <button
+                    onClick={() => {
+                      setPlayTrailerMovie(matchedMovieToShow);
+                      setMatchedMovieToShow(null);
+                    }}
+                    className="w-full py-3 rounded-theme-radius bg-theme-accent hover:bg-theme-accent-hover text-theme-btn-text font-black text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg flex items-center justify-center gap-1.5"
+                  >
+                    <Play className="h-4 w-4 fill-current" />
+                    Watch Trailer
+                  </button>
+                )}
+                <button
+                  onClick={() => setMatchedMovieToShow(null)}
+                  className="w-full py-3 rounded-theme-radius bg-theme-card border border-theme-border hover:border-theme-border-hover text-theme-fg/80 hover:text-theme-fg font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer flex items-center justify-center"
+                >
+                  Keep Swiping
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

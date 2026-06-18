@@ -20,3 +20,27 @@ export interface FilterState {
   minRating: number;
   decade: string; // 'all' | '1990s' | '2000s' | '2010s' | '2020s'
 }
+
+export interface RoomParticipant {
+  name: string;
+  genres: string[];
+  completedFilters: boolean;
+}
+
+export interface Room {
+  roomCode: string;
+  createdAt: string;
+  participants: RoomParticipant[];
+}
+
+export interface RoomSwipe {
+  id: string;
+  room_code: string;
+  username: string;
+  movie_id: string;
+  movie_title: string;
+  movie_data: Movie;
+  direction: 'like' | 'dislike';
+  created_at: string;
+}
+
