@@ -57,11 +57,12 @@ export default function RoomLobby({
       setError('Please enter a nickname.');
       return;
     }
-    if (roomCode.length !== 5) {
-      setError('Please enter or generate a 5-digit room code.');
-      return;
+    let codeToUse = roomCode;
+    if (codeToUse.length !== 5) {
+      codeToUse = Math.floor(10000 + Math.random() * 90000).toString();
+      setRoomCode(codeToUse);
     }
-    onCreate(roomCode, nickname.trim());
+    onCreate(codeToUse, nickname.trim());
   };
 
   return (
@@ -157,7 +158,7 @@ export default function RoomLobby({
           <button
             type="button"
             onClick={handleCreate}
-            disabled={loading || !nickname.trim() || roomCode.length !== 5}
+            disabled={loading || !nickname.trim()}
             className="w-full py-3.5 px-4 rounded-theme-radius bg-theme-accent hover:bg-theme-accent-hover text-theme-btn-text font-black text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-lg active:scale-97"
           >
             {loading ? (

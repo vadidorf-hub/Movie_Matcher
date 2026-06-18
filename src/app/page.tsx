@@ -257,6 +257,8 @@ export default function Home() {
       
       if (!rooms || rooms.length === 0) {
         setRoomLobbyError('Room not found. Please check the code or create a new room.');
+        localStorage.removeItem('room_code');
+        localStorage.removeItem('room_username');
         return;
       }
       
@@ -1083,7 +1085,7 @@ export default function Home() {
               </div>
               <button
                 onClick={handleLeaveRoom}
-                className="hidden sm:flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors border border-red-500/20 hover:border-red-500/40 rounded-theme-radius px-3 py-1.5 bg-red-500/5 cursor-pointer font-semibold"
+                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors border border-red-500/20 hover:border-red-500/40 rounded-theme-radius px-3 py-1.5 bg-red-500/5 cursor-pointer font-semibold"
                 title="Exit Room"
               >
                 <LogOut className="h-3.5 w-3.5" />
@@ -1404,7 +1406,7 @@ export default function Home() {
                   {roomCode ? (
                     // Room Mode Render Logic
                     !currentRoom || currentRoom.moviePool.length === 0 ? (
-                      <div className="text-center p-8 max-w-md bg-theme-panel border border-theme-border rounded-theme-radius shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95">
+                      <div className="text-center p-8 max-w-md bg-theme-panel border border-theme-border rounded-theme-radius shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 space-y-6">
                         <div className="absolute -inset-10 bg-gradient-to-tr from-theme-accent/10 to-theme-secondary/10 blur-3xl pointer-events-none" />
                         <Film className="h-12 w-12 mx-auto text-theme-accent animate-pulse mb-4" />
                         <h3 className="text-lg font-bold text-theme-fg uppercase tracking-tight font-theme-head">Setting up Movie Deck...</h3>
@@ -1413,6 +1415,14 @@ export default function Home() {
                             ? "Fetching movies for your selected genres. Please wait..."
                             : `Waiting for ${currentRoom?.creatorName || 'room creator'} to choose categories and launch the room...`}
                         </p>
+                        <div className="pt-2 relative">
+                          <button
+                            onClick={handleLeaveRoom}
+                            className="w-full py-2.5 rounded-theme-radius bg-theme-card border border-theme-border hover:border-red-500/40 text-xs font-bold uppercase tracking-wider text-theme-fg/60 hover:text-red-400 transition-colors cursor-pointer"
+                          >
+                            Exit Room
+                          </button>
+                        </div>
                       </div>
                     ) : userFinished ? (
                       // Stack Completion / Progress view
