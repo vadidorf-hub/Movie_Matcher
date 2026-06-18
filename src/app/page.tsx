@@ -108,9 +108,68 @@ export default function Home() {
   const [matchedMovieToShow, setMatchedMovieToShow] = useState<Movie | null>(null);
   
   const currentParticipant = currentRoom?.participants.find(p => p.name.toLowerCase() === username.toLowerCase());
-  const hasCompletedFilters = currentParticipant?.completedFilters || false;
   const partnerParticipant = currentRoom?.participants.find(p => p.name.toLowerCase() !== username.toLowerCase());
   const partnerCompletedFilters = partnerParticipant?.completedFilters || false;
+
+  const isCreator = useMemo(() => {
+    if (!currentRoom) return false;
+    return currentRoom.creatorName 
+      ? currentRoom.creatorName.toLowerCase() === username.toLowerCase()
+      : currentRoom.participants[0]?.name.toLowerCase() === username.toLowerCase();
+  }, [currentRoom, username]);
+
+  const hasCompletedFilters = useMemo(() => {
+    if (!roomCode) return false;
+    return isCreator ? (currentParticipant?.completedFilters || false) : true;
+  }, [roomCode, isCreator, currentParticipant]);
+
+  const userSwipesCount = useMemo(() => {
+    if (!currentRoom || !roomSwipes) return 0;
+    return roomSwipes.filter(
+      (s) => s.username.toLowerCase() === username.toLowerCase() && s.stack_index === currentRoom.stackIndex
+    ).length;
+  }, [roomSwipes, currentRoom, username]);
+
+  const userFinished = useMemo(() => {
+    if (!roomCode || !currentRoom || currentRoom.moviePool.length === 0) return false;
+    return userSwipesCount >= currentRoom.moviePool.length;
+  }, [roomCode, currentRoom, userSwipesCount]);
+
+  const partnerSwipesCount = useMemo(() => {
+    if (!currentRoom || !partnerParticipant || !roomSwipes) return 0;
+    return roomSwipes.filter(
+      (s) => s.username.toLowerCase() === partnerParticipant.name.toLowerCase() && s.stack_index === currentRoom.stackIndex
+    ).length;
+  }, [roomSwipes, currentRoom, partnerParticipant]);
+
+  const partnerFinished = useMemo(() => {
+    if (!roomCode || !currentRoom || !partnerParticipant || currentRoom.moviePool.length === 0) return false;
+    return partnerSwipesCount >= currentRoom.moviePool.length;
+  }, [roomCode, currentRoom, partnerParticipant, partnerSwipesCount]);
+
+  const currentStackMatches = useMemo(() => {
+    if (!currentRoom || !roomSwipes) return [];
+    const currentStackSwipes = roomSwipes.filter(s => s.stack_index === currentRoom.stackIndex);
+    const movieLikes = currentStackSwipes.filter((s: any) => s.direction === 'like');
+    const likesByMovie: { [movieId: string]: string[] } = {};
+    const movieDataMap: { [movieId: string]: any } = {};
+
+    movieLikes.forEach((s: any) => {
+      if (!likesByMovie[s.movie_id]) {
+        likesByMovie[s.movie_id] = [];
+      }
+      if (!likesByMovie[s.movie_id].includes(s.username)) {
+        likesByMovie[s.movie_id].push(s.username);
+      }
+      movieDataMap[s.movie_id] = s.movie_data;
+    });
+
+    const matchedMovieIds = Object.keys(likesByMovie).filter(
+      id => likesByMovie[id].length >= 2
+    );
+
+    return matchedMovieIds.map(id => movieDataMap[id] as Movie);
+  }, [roomSwipes, currentRoom]);
 
   // Helper to shuffle array
   const shuffleArray = <T,>(arr: T[]): T[] => {
@@ -235,7 +294,10 @@ export default function Home() {
       setCurrentRoom({
         roomCode: room.room_code,
         createdAt: room.created_at,
-        participants: updatedParticipants
+        participants: updatedParticipants,
+        moviePool: room.movie_pool || [],
+        stackIndex: room.stack_index || 1,
+        creatorName: room.creator_name || null
       });
       
       await fetchRoomSwipesAndMatches(code, name);
@@ -275,7 +337,10 @@ export default function Home() {
         .from('rooms')
         .insert({
           room_code: code,
-          participants: [newParticipant]
+          participants: [newParticipant],
+          creator_name: name,
+          stack_index: 1,
+          movie_pool: []
         });
         
       if (insertError) throw insertError;
@@ -288,7 +353,10 @@ export default function Home() {
       setCurrentRoom({
         roomCode: code,
         createdAt: new Date().toISOString(),
-        participants: [newParticipant]
+        participants: [newParticipant],
+        moviePool: [],
+        stackIndex: 1,
+        creatorName: name
       });
       
       setRoomSwipes([]);
@@ -313,6 +381,58 @@ export default function Home() {
     localStorage.removeItem('room_username');
   };
 
+  // Helper to fetch 50 random movies for the room
+  const fetchRoomMoviePool = async (genresList: string[], excludedMovieIds: string[] = []): Promise<Movie[]> => {
+    const poolSize = 50;
+    const uniqueMovies = new Map<string, Movie>();
+    
+    // TMDB has many pages of popular movies. Let's sample from pages 1 to 50.
+    const pagesToTry = Array.from({ length: 50 }, (_, i) => i + 1);
+    const shuffledPages = shuffleArray(pagesToTry);
+    
+    let pageIndex = 0;
+    const batchSize = 3;
+    let attempts = 0;
+    const maxAttempts = 5; // 5 batches of 3 = 15 pages max
+    
+    while (uniqueMovies.size < poolSize && pageIndex < shuffledPages.length && attempts < maxAttempts) {
+      const currentBatch = shuffledPages.slice(pageIndex, pageIndex + batchSize);
+      pageIndex += batchSize;
+      attempts++;
+      
+      const fetchPromises = currentBatch.map(async (p) => {
+        const queryParams = new URLSearchParams({
+          page: p.toString(),
+          minRating: '7.0',
+          decade: 'all',
+        });
+        if (genresList.length > 0) {
+          queryParams.append('genres', genresList.join(','));
+        }
+        try {
+          const res = await fetch(`/api/movies/popular?${queryParams.toString()}`);
+          if (!res.ok) return [];
+          return await res.json() as Movie[];
+        } catch (err) {
+          console.error(`Error fetching page ${p}:`, err);
+          return [];
+        }
+      });
+      
+      const results = await Promise.all(fetchPromises);
+      const combined = results.flat();
+      
+      for (const movie of combined) {
+        if (!movie || !movie.id) continue;
+        if (excludedMovieIds.includes(movie.id)) continue;
+        uniqueMovies.set(movie.id, movie);
+      }
+    }
+    
+    const shuffledPool = shuffleArray(Array.from(uniqueMovies.values()));
+    return shuffledPool.slice(0, poolSize);
+  };
+
   // Submit filters
   const handleRoomFiltersSubmit = async (genres: string[]) => {
     if (!currentRoom || !username) return;
@@ -330,16 +450,34 @@ export default function Home() {
         return p;
       });
       
+      const isCreator = currentRoom.creatorName 
+        ? currentRoom.creatorName.toLowerCase() === username.toLowerCase()
+        : currentRoom.participants[0]?.name.toLowerCase() === username.toLowerCase();
+        
+      let moviePool: Movie[] = [];
+      if (isCreator) {
+        moviePool = await fetchRoomMoviePool(genres, []);
+        if (moviePool.length === 0) {
+          throw new Error("Could not fetch any movies for the selected genres. Please try different categories!");
+        }
+      }
+      
       const { error } = await supabase
         .from('rooms')
-        .update({ participants: updatedParticipants })
+        .update({ 
+          participants: updatedParticipants,
+          movie_pool: moviePool,
+          stack_index: 1
+        })
         .eq('room_code', currentRoom.roomCode);
         
       if (error) throw error;
       
       setCurrentRoom({
         ...currentRoom,
-        participants: updatedParticipants
+        participants: updatedParticipants,
+        moviePool: moviePool,
+        stackIndex: 1
       });
       
     } catch (err: any) {
@@ -350,49 +488,53 @@ export default function Home() {
     }
   };
 
-  // Fetch randomized movie pool for room
-  const fetchRandomRoomMovies = async (genresList: string[]) => {
+  // Proceed to the next stack of 50 movies
+  const handleProceedToNextStack = async () => {
+    if (!currentRoom || !roomCode) return;
+    
     setIsLoading(true);
-    setPage(1);
-    setConsecutiveEmptyFetches(0);
     try {
-      const p1 = Math.floor(Math.random() * 8) + 1;
-      const p2 = Math.floor(Math.random() * 8) + 1;
-      const pages = p1 === p2 ? [p1] : [p1, p2];
-
-      const moviePromises = pages.map(async (p) => {
-        const queryParams = new URLSearchParams({
-          page: p.toString(),
-          minRating: '7.0',
-          decade: 'all',
-        });
-        if (genresList.length > 0) {
-          queryParams.append('genres', genresList.join(','));
-        }
-        const res = await fetch(`/api/movies/popular?${queryParams.toString()}`);
-        if (!res.ok) return [];
-        return await res.json() as Movie[];
+      // 1. Fetch all swiped movie IDs to exclude them in the next stack
+      const { data: swipes, error: swipesError } = await supabase
+        .from('room_swipes')
+        .select('movie_id')
+        .eq('room_code', roomCode);
+        
+      if (swipesError) throw swipesError;
+      
+      const swipedMovieIds = swipes ? swipes.map((s: any) => s.movie_id) : [];
+      
+      // 2. Fetch 50 fresh movies
+      const nextStackIndex = (currentRoom.stackIndex || 1) + 1;
+      const newPool = await fetchRoomMoviePool(mergedGenres, swipedMovieIds);
+      
+      if (newPool.length === 0) {
+        alert("No more movies found for your selected categories! Try expanding your genres.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // 3. Update room in DB
+      const { error: updateError } = await supabase
+        .from('rooms')
+        .update({
+          movie_pool: newPool,
+          stack_index: nextStackIndex
+        })
+        .eq('room_code', roomCode);
+        
+      if (updateError) throw updateError;
+      
+      // 4. Update local state
+      setCurrentRoom({
+        ...currentRoom,
+        moviePool: newPool,
+        stackIndex: nextStackIndex
       });
-
-      const results = await Promise.all(moviePromises);
-      const combined = results.flat();
-
-      const uniqueMap = new Map<string, Movie>();
-      combined.forEach(m => {
-        if (m && m.id) uniqueMap.set(m.id, m);
-      });
-
-      const userSwipedIds = roomSwipes
-        .filter(s => s.username.toLowerCase() === username.toLowerCase())
-        .map(s => s.movie_id);
-
-      let pool = Array.from(uniqueMap.values()).filter(m => !userSwipedIds.includes(m.id));
-
-      pool = shuffleArray(pool);
-
-      setLiveMovies(pool);
-    } catch (error) {
-      console.error('Failed to load random room movies:', error);
+      
+    } catch (err: any) {
+      console.error("Error proceeding to next stack:", err);
+      alert(err.message || "Failed to load the next stack of movies.");
     } finally {
       setIsLoading(false);
     }
@@ -456,6 +598,9 @@ export default function Home() {
               roomCode: updatedRoom.room_code,
               createdAt: updatedRoom.created_at,
               participants: updatedRoom.participants,
+              moviePool: updatedRoom.movie_pool || [],
+              stackIndex: updatedRoom.stack_index || 1,
+              creatorName: updatedRoom.creator_name || null
             });
           }
         }
@@ -526,9 +671,7 @@ export default function Home() {
     if (!isMounted) return;
     
     if (roomCode) {
-      if (hasCompletedFilters) {
-        fetchRandomRoomMovies(mergedGenres);
-      }
+      // Room Mode utilizes movie pool from database state (managed by creator & cooperative stack proceeds)
       return;
     }
     
@@ -587,10 +730,11 @@ export default function Home() {
 
   const filteredDeck = useMemo(() => {
     if (roomCode) {
+      if (!currentRoom || !currentRoom.moviePool) return [];
       const userSwipedIds = roomSwipes
-        .filter((s) => s.username.toLowerCase() === username.toLowerCase())
+        .filter((s) => s.username.toLowerCase() === username.toLowerCase() && s.stack_index === currentRoom.stackIndex)
         .map((s) => s.movie_id);
-      return liveMovies.filter((movie) => !userSwipedIds.includes(movie.id));
+      return currentRoom.moviePool.filter((movie) => !userSwipedIds.includes(movie.id));
     }
 
     return liveMovies.filter((movie) => {
@@ -617,64 +761,11 @@ export default function Home() {
 
       return true;
     });
-  }, [liveMovies, history, filters, roomCode, roomSwipes, username]);
+  }, [currentRoom, liveMovies, history, filters, roomCode, roomSwipes, username]);
 
   // Infinite Scroll Deck Loading
   useEffect(() => {
-    if (roomCode) {
-      if (!hasCompletedFilters) return;
-      const loadMoreRoomMovies = async () => {
-        if (
-          isMounted &&
-          !isLoading &&
-          !fetchingNextPage &&
-          filteredDeck.length < 5 &&
-          !searchQuery
-        ) {
-          setFetchingNextPage(true);
-          try {
-            const nextPage = Math.floor(Math.random() * 10) + 1;
-            const queryParams = new URLSearchParams({
-              page: nextPage.toString(),
-              minRating: '7.0',
-              decade: 'all',
-            });
-            if (mergedGenres.length > 0) {
-              queryParams.append('genres', mergedGenres.join(','));
-            }
-            
-            const res = await fetch(`/api/movies/popular?${queryParams.toString()}`);
-            if (!res.ok) throw new Error('Failed to fetch next page');
-            const nextPageMovies = await res.json() as Movie[];
-
-            const userSwipedIds = roomSwipes
-              .filter(s => s.username.toLowerCase() === username.toLowerCase())
-              .map(s => s.movie_id);
-
-            const existingIds = liveMovies.map((m) => m.id);
-            const newMatching = nextPageMovies.filter((movie: Movie) => {
-              if (existingIds.includes(movie.id)) return false;
-              if (userSwipedIds.includes(movie.id)) return false;
-              return true;
-            });
-
-            const shuffledNewMatching = shuffleArray(newMatching);
-
-            setLiveMovies((prev) => {
-              const currentIds = prev.map((m) => m.id);
-              const uniques = shuffledNewMatching.filter((m) => !currentIds.includes(m.id));
-              return [...uniques, ...prev];
-            });
-          } catch (error) {
-            console.error('Failed to load more room movies:', error);
-          } finally {
-            setFetchingNextPage(false);
-          }
-        }
-      };
-      loadMoreRoomMovies();
-      return;
-    }
+    if (roomCode) return; // Disable automatic infinite scroll in room matchmaking
 
     const loadNextPage = async () => {
       if (
@@ -772,6 +863,7 @@ export default function Home() {
           movie_title: movie.title,
           movie_data: movie,
           direction: swipeDir,
+          stack_index: currentRoom?.stackIndex || 1
         });
 
         if (error) throw error;
@@ -793,6 +885,11 @@ export default function Home() {
 
         if (userSwipes.length === 0) return;
         const lastSwipe = userSwipes[0];
+
+        if (currentRoom && lastSwipe.stack_index !== currentRoom.stackIndex) {
+          alert("Cannot undo swipes from previous stacks.");
+          return;
+        }
 
         const { error } = await supabase
           .from('room_swipes')
@@ -831,7 +928,6 @@ export default function Home() {
 
           if (error) throw error;
           await fetchRoomSwipesAndMatches(roomCode, username);
-          await fetchRandomRoomMovies(mergedGenres);
         } catch (err) {
           console.error('Error resetting room swipes:', err);
         } finally {
@@ -1304,14 +1400,133 @@ export default function Home() {
                 </aside>
 
                 {/* Center Swiping Deck Viewport */}
-                <main className="flex-grow flex items-center justify-center p-4 md:p-6 h-full bg-theme-bg/10">
-                  <SwipeDeck
-                    movies={filteredDeck}
-                    onSwipe={handleSwipe}
-                    onUndo={handleUndo}
-                    canUndo={roomCode ? roomSwipes.some(s => s.username.toLowerCase() === username.toLowerCase()) : history.length > 0}
-                    onResetDeck={handleStartOver}
-                  />
+                <main className="flex-grow flex items-center justify-center p-4 md:p-6 h-full bg-theme-bg/10 overflow-y-auto amethyst-scrollbar">
+                  {roomCode ? (
+                    // Room Mode Render Logic
+                    !currentRoom || currentRoom.moviePool.length === 0 ? (
+                      <div className="text-center p-8 max-w-md bg-theme-panel border border-theme-border rounded-theme-radius shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95">
+                        <div className="absolute -inset-10 bg-gradient-to-tr from-theme-accent/10 to-theme-secondary/10 blur-3xl pointer-events-none" />
+                        <Film className="h-12 w-12 mx-auto text-theme-accent animate-pulse mb-4" />
+                        <h3 className="text-lg font-bold text-theme-fg uppercase tracking-tight font-theme-head">Setting up Movie Deck...</h3>
+                        <p className="text-xs text-theme-fg/60 mt-2">
+                          {isCreator 
+                            ? "Fetching movies for your selected genres. Please wait..."
+                            : `Waiting for ${currentRoom?.creatorName || 'room creator'} to choose categories and launch the room...`}
+                        </p>
+                      </div>
+                    ) : userFinished ? (
+                      // Stack Completion / Progress view
+                      <div className="w-full max-w-md p-6 sm:p-8 bg-theme-panel border border-theme-border rounded-theme-radius shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 space-y-6">
+                        <div className="absolute -inset-10 bg-gradient-to-tr from-theme-accent/15 to-theme-secondary/15 blur-3xl pointer-events-none" />
+                        
+                        <div className="text-center space-y-2 relative">
+                          <span className="text-4xs font-black bg-theme-accent text-theme-btn-text px-3 py-1 rounded-full uppercase tracking-widest animate-pulse">
+                            Stack {currentRoom.stackIndex} Complete
+                          </span>
+                          <h3 className="text-xl sm:text-2xl font-black text-theme-fg uppercase tracking-tight pt-1 font-theme-head">
+                            You've swiped all films!
+                          </h3>
+                          <p className="text-xs text-theme-fg/60 max-w-xs mx-auto">
+                            {!partnerParticipant ? (
+                              <span>Waiting for your partner to join Room <strong className="font-mono text-theme-secondary">{roomCode}</strong>...</span>
+                            ) : !partnerFinished ? (
+                              <span>Waiting for <strong>{partnerParticipant.name}</strong> to finish swiping...</span>
+                            ) : (
+                              <span>Both of you completed Stack {currentRoom.stackIndex}!</span>
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Partner Progress Bar */}
+                        {partnerParticipant && (
+                          <div className="bg-theme-card border border-theme-border p-4 rounded-theme-radius space-y-2 relative">
+                            <div className="flex justify-between text-4xs font-bold uppercase tracking-wider text-theme-fg/60">
+                              <span>{partnerParticipant.name}'s Progress</span>
+                              <span className="text-theme-accent">{partnerSwipesCount} / {currentRoom.moviePool.length} swiped</span>
+                            </div>
+                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-theme-accent to-theme-secondary transition-all duration-300"
+                                style={{ width: `${Math.min(100, (partnerSwipesCount / currentRoom.moviePool.length) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Matches from this stack */}
+                        <div className="space-y-3 relative">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-theme-fg/70 border-b border-theme-border pb-2 flex items-center gap-1.5 font-theme-head">
+                            <Sparkles className="h-4 w-4 text-theme-accent animate-pulse" />
+                            Stack {currentRoom.stackIndex} Matches ({currentStackMatches.length})
+                          </h4>
+                          {currentStackMatches.length === 0 ? (
+                            <p className="text-2xs text-theme-fg/40 font-semibold text-center py-4 italic">No matches in this stack yet.</p>
+                          ) : (
+                            <div className="grid grid-cols-3 gap-2.5 max-h-48 overflow-y-auto amethyst-scrollbar pr-1">
+                              {currentStackMatches.map((movie) => (
+                                <div 
+                                  key={`stack-match-${movie.id}`} 
+                                  onClick={() => setSelectedMovie(movie)}
+                                  className="group relative aspect-[2/3] w-full rounded border border-theme-border overflow-hidden hover:border-theme-accent-hover transition-colors cursor-pointer"
+                                >
+                                  <Image 
+                                    src={movie.posterUrl} 
+                                    alt={movie.title} 
+                                    fill 
+                                    sizes="96px"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="pt-2 relative">
+                          {partnerFinished ? (
+                            <button
+                              onClick={handleProceedToNextStack}
+                              className="w-full py-3 rounded-theme-radius bg-theme-accent hover:bg-theme-accent-hover text-theme-btn-text font-black text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer shadow-lg active:scale-97 flex items-center justify-center gap-2"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                              Proceed to Stack {currentRoom.stackIndex + 1}
+                            </button>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center justify-center gap-2 text-2xs text-theme-fg/40 font-bold uppercase py-2 bg-theme-card border border-theme-border rounded-theme-radius">
+                                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-theme-fg/20 border-t-transparent" />
+                                Waiting for partner...
+                              </div>
+                              <button
+                                onClick={handleLeaveRoom}
+                                className="w-full py-2.5 rounded-theme-radius bg-transparent hover:bg-white/5 border border-theme-border text-red-400 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                              >
+                                Exit Room
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <SwipeDeck
+                        movies={filteredDeck}
+                        onSwipe={handleSwipe}
+                        onUndo={handleUndo}
+                        canUndo={roomSwipes.some(s => s.username.toLowerCase() === username.toLowerCase() && s.stack_index === currentRoom.stackIndex)}
+                        onResetDeck={handleStartOver}
+                      />
+                    )
+                  ) : (
+                    // Regular Solo Mode Deck
+                    <SwipeDeck
+                      movies={filteredDeck}
+                      onSwipe={handleSwipe}
+                      onUndo={handleUndo}
+                      canUndo={history.length > 0}
+                      onResetDeck={handleStartOver}
+                    />
+                  )}
                 </main>
 
                 {/* Desktop Right Sidebar: Watchlist or Room Matches */}

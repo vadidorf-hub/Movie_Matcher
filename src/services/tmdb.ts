@@ -133,7 +133,7 @@ export async function fetchLivePopularMovies(page = 1, filters?: DiscoverFilters
         const genreIds = filters.genres
           .map((name) => genreMap[name])
           .filter(Boolean)
-          .join(',');
+          .join('|');
         if (genreIds) {
           queryParams.append('with_genres', genreIds);
         }

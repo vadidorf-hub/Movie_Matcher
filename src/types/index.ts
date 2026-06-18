@@ -31,6 +31,9 @@ export interface Room {
   roomCode: string;
   createdAt: string;
   participants: RoomParticipant[];
+  moviePool: Movie[];
+  stackIndex: number;
+  creatorName: string | null;
 }
 
 export interface RoomSwipe {
@@ -42,5 +45,6 @@ export interface RoomSwipe {
   movie_data: Movie;
   direction: 'like' | 'dislike';
   created_at: string;
+  stack_index: number;
 }
 
